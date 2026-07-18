@@ -1,14 +1,18 @@
 import { notFound } from "next/navigation";
+import type { Viewport } from "next";
 import { getSupabase } from "@/lib/supabase";
 import { ROADMAPS } from "@/content/roadmaps";
 import { COPY } from "@/content/copy";
 import type { FaseId } from "@/content/tipos";
 import { BadgePlaceholder } from "@/components/BadgePlaceholder";
 import { TrackerResultado } from "@/components/TrackerResultado";
+import { BrandBackdrop } from "@/components/brand/BrandBackdrop";
 
 export const metadata = {
   title: "Tu roadmap | Daviddigital",
 };
+
+export const viewport: Viewport = { themeColor: "#0D1420" };
 
 const FASES: FaseId[] = ["A1", "A2", "A3", "B1", "B2", "B3"];
 
@@ -45,39 +49,56 @@ export default async function PaginaResultado({
   const esDemo = token.startsWith("demo-");
 
   return (
-    <main className="flex-1 flex flex-col items-center px-5 py-10">
+    <BrandBackdrop
+      outerClassName="flex-1"
+      innerClassName="flex-1 flex flex-col items-center px-5 py-10"
+    >
       <TrackerResultado fase={fase} />
       <div className="w-full max-w-xl">
-        <p className="text-center text-sm font-semibold tracking-wide text-indigo-600 uppercase mb-8">
+        <span className="mx-auto mb-8 flex w-fit items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs font-semibold tracking-widest text-white/70 uppercase backdrop-blur">
+          <span className="h-1.5 w-1.5 rounded-full bg-[var(--brand-orange)] shadow-[0_0_10px_var(--brand-orange)]" />
           {COPY.marca.nombre}
-        </p>
+        </span>
 
         {esDemo && (
-          <p className="mb-4 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-xs px-3 py-2">
+          <p className="mb-4 rounded-lg bg-amber-400/10 border border-amber-400/25 text-amber-300 text-xs px-3 py-2">
             {COPY.demo.aviso}
           </p>
         )}
 
-        <div className="rounded-2xl bg-white border border-stone-200 shadow-sm p-6 sm:p-8">
+        <div className="brand-glass brand-pop-in relative overflow-hidden rounded-3xl p-6 sm:p-8">
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute -top-16 -right-16 h-56 w-56 rounded-full blur-3xl"
+            style={{ background: "radial-gradient(circle, rgba(235,78,39,0.3), transparent 70%)" }}
+          />
+
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--brand-orange)]/15 border border-[var(--brand-orange)]/40 px-3 py-1 text-[11px] font-bold tracking-wide text-[var(--brand-orange-light)] uppercase">
+            Tu fase: {fase}
+          </span>
           <BadgePlaceholder visible={roadmap.status === "placeholder"} />
 
-          <h1 className="text-2xl sm:text-3xl font-bold text-stone-900 mt-2">
-            {roadmap.parteA.titulo}
+          <h1 className="font-display text-2xl sm:text-3xl font-bold mt-3">
+            <span className="brand-text-gradient">{roadmap.parteA.titulo}</span>
           </h1>
-          <p className="mt-4 text-stone-700 leading-relaxed">
+          <p className="mt-4 text-white/75 leading-relaxed">
             {roadmap.parteA.diagnostico}
           </p>
 
-          <h2 className="mt-8 text-lg font-bold text-stone-900">
+          <h2 className="font-display mt-8 text-lg font-bold text-white">
             {COPY.resultado.tusPasos}
           </h2>
           <ol className="mt-4 space-y-4">
             {roadmap.parteB.pasos.map((paso, i) => (
-              <li key={i} className="flex gap-3.5">
-                <span className="flex-none h-7 w-7 rounded-full bg-indigo-600 text-white text-sm font-bold flex items-center justify-center">
+              <li
+                key={i}
+                className="brand-pop-in flex gap-3.5"
+                style={{ animationDelay: `${0.15 + i * 0.12}s` }}
+              >
+                <span className="brand-btn-cta flex-none flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold text-white">
                   {i + 1}
                 </span>
-                <p className="text-sm sm:text-base text-stone-700 leading-relaxed">
+                <p className="text-sm sm:text-base text-white/80 leading-relaxed pt-1">
                   {paso}
                 </p>
               </li>
@@ -85,27 +106,34 @@ export default async function PaginaResultado({
           </ol>
 
           {!esDemo && (
-            <p className="mt-8 rounded-lg bg-stone-50 border border-stone-200 text-stone-600 text-sm px-4 py-3">
+            <p className="mt-8 rounded-xl bg-white/5 border border-white/10 text-white/60 text-sm px-4 py-3">
               {COPY.resultado.guardado}
             </p>
           )}
         </div>
 
-        <div className="mt-6 rounded-2xl bg-indigo-600 text-white p-6 sm:p-8 text-center">
-          <h2 className="text-xl font-bold">{COPY.resultado.ctaTitulo}</h2>
-          <p className="mt-2 text-sm text-indigo-100 leading-relaxed">
-            {COPY.resultado.ctaTexto}
-          </p>
-          <a
-            href={COPY.marca.instagramUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-5 inline-block rounded-xl bg-white text-indigo-700 font-semibold px-6 py-3.5 hover:bg-indigo-50 transition"
-          >
-            {COPY.resultado.ctaBoton}
-          </a>
+        <div className="brand-glass brand-pop-in relative overflow-hidden rounded-3xl p-6 sm:p-8 text-center mt-6" style={{ animationDelay: "0.4s" }}>
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0"
+            style={{ background: "radial-gradient(circle at 50% 0%, rgba(235,78,39,0.22), transparent 65%)" }}
+          />
+          <div className="relative z-10">
+            <h2 className="font-display text-xl font-bold">{COPY.resultado.ctaTitulo}</h2>
+            <p className="mt-2 text-sm text-white/70 leading-relaxed max-w-sm mx-auto">
+              {COPY.resultado.ctaTexto}
+            </p>
+            <a
+              href={COPY.marca.instagramUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="brand-btn-cta font-display mt-5 inline-block rounded-2xl px-7 py-3.5 text-white font-bold"
+            >
+              {COPY.resultado.ctaBoton}
+            </a>
+          </div>
         </div>
       </div>
-    </main>
+    </BrandBackdrop>
   );
 }

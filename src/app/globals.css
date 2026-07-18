@@ -17,3 +17,315 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans), -apple-system, "Segoe UI", sans-serif;
 }
+
+/* ============================================================
+   Identidad visual del embudo de diagnóstico (marca Daviddigital)
+   Uso local/opt-in vía clases .brand-* — no afecta /admin ni /privacidad
+   ============================================================ */
+
+:root {
+  --brand-bg: #0d1420;
+  --brand-bg-soft: #111b2c;
+  --brand-surface: #16202f;
+  --brand-border: rgba(255, 255, 255, 0.08);
+  --brand-border-strong: rgba(255, 255, 255, 0.16);
+  --brand-orange: #eb4e27;
+  --brand-orange-light: #ff7a4d;
+  --brand-orange-dark: #b83a1c;
+  --brand-orange-glow: rgba(235, 78, 39, 0.45);
+  --brand-text: #f6f3ef;
+  --brand-text-muted: #93a1b8;
+  --brand-success: #34d399;
+  --gradient-cta: linear-gradient(135deg, #ff7a4d 0%, #eb4e27 55%, #b83a1c 100%);
+}
+
+.font-display {
+  font-family: var(--font-space-grotesk), var(--font-sans), sans-serif;
+}
+
+.font-body-brand {
+  font-family: var(--font-dm-sans), var(--font-sans), sans-serif;
+}
+
+.brand-shell {
+  background: var(--brand-bg);
+  color: var(--brand-text);
+}
+
+.brand-grid-overlay {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+  background-size: 44px 44px;
+  -webkit-mask-image: radial-gradient(ellipse at center, black, transparent 78%);
+  mask-image: radial-gradient(ellipse at center, black, transparent 78%);
+}
+
+.ambient-blob {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(70px);
+  will-change: transform;
+  animation: blob-float 24s ease-in-out infinite;
+}
+
+.brand-glass {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.015));
+  border: 1px solid var(--brand-border);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+  box-shadow:
+    0 20px 60px -20px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.brand-text-gradient {
+  background: linear-gradient(90deg, #fff, var(--brand-orange-light), var(--brand-orange), #fff);
+  background-size: 300% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: text-gradient-move 6s ease-in-out infinite;
+}
+
+.brand-btn-cta {
+  position: relative;
+  background: var(--gradient-cta);
+  background-size: 220% 220%;
+  background-position: 0% 50%;
+  box-shadow:
+    0 12px 32px -10px rgba(235, 78, 39, 0.65),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  transition:
+    transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.3s ease,
+    background-position 0.6s ease;
+  overflow: hidden;
+}
+
+.brand-btn-cta::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    115deg,
+    transparent 20%,
+    rgba(255, 255, 255, 0.35) 42%,
+    rgba(255, 255, 255, 0.35) 46%,
+    transparent 60%
+  );
+  transform: translateX(-140%);
+  transition: transform 0.7s ease;
+}
+
+.brand-btn-cta:hover {
+  background-position: 100% 50%;
+  box-shadow:
+    0 16px 42px -8px rgba(235, 78, 39, 0.8),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  transform: translateY(-2px);
+}
+
+.brand-btn-cta:hover::before {
+  transform: translateX(140%);
+}
+
+.brand-btn-cta:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.brand-btn-cta:disabled {
+  opacity: 0.6;
+  transform: none;
+}
+
+.brand-halo {
+  position: absolute;
+  inset: -14px;
+  border-radius: inherit;
+  background: var(--brand-orange);
+  filter: blur(22px);
+  opacity: 0.5;
+  z-index: -1;
+  animation: glow-pulse 3.2s ease-in-out infinite;
+}
+
+.brand-option {
+  position: relative;
+  z-index: 0;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.015));
+  border: 1px solid var(--brand-border);
+  transition:
+    border-color 0.25s ease,
+    transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+    background 0.25s ease;
+}
+
+.brand-option:hover {
+  border-color: rgba(235, 78, 39, 0.45);
+  transform: translateX(3px);
+  background: linear-gradient(180deg, rgba(235, 78, 39, 0.1), rgba(255, 255, 255, 0.02));
+}
+
+.brand-option--selected {
+  border-color: transparent;
+  background: linear-gradient(180deg, rgba(235, 78, 39, 0.16), rgba(255, 255, 255, 0.03));
+}
+
+.brand-option--selected::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  z-index: -1;
+  border-radius: inherit;
+  background: conic-gradient(from 0deg, var(--brand-orange), #ffb199, var(--brand-orange-dark), var(--brand-orange));
+  filter: blur(3px);
+  opacity: 0.85;
+  animation: ring-scan 4s linear infinite;
+}
+
+.brand-progress-track {
+  height: 8px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  position: relative;
+}
+
+.brand-progress-fill {
+  height: 100%;
+  border-radius: 9999px;
+  background: var(--gradient-cta);
+  position: relative;
+  overflow: hidden;
+  transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.brand-progress-fill::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 40%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.55), transparent);
+  animation: shimmer-sweep 1.7s ease-in-out infinite;
+}
+
+.brand-step-icon {
+  position: relative;
+}
+
+.brand-step-icon--active::before {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border-radius: 9999px;
+  border: 1.5px solid var(--brand-orange);
+  opacity: 0.6;
+  animation: radar-ping 1.8s ease-out infinite;
+}
+
+.brand-spark {
+  position: absolute;
+  border-radius: 9999px;
+  background: var(--brand-orange-light);
+  animation: spark-burst 0.7s ease-out forwards;
+}
+
+@keyframes blob-float {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(30px, -34px) scale(1.08);
+  }
+  66% {
+    transform: translate(-24px, 22px) scale(0.94);
+  }
+}
+
+@keyframes glow-pulse {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.97);
+  }
+  50% {
+    opacity: 0.65;
+    transform: scale(1.04);
+  }
+}
+
+@keyframes text-gradient-move {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes shimmer-sweep {
+  0% {
+    transform: translateX(-150%);
+  }
+  100% {
+    transform: translateX(350%);
+  }
+}
+
+@keyframes ring-scan {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes radar-ping {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(1.7);
+    opacity: 0;
+  }
+}
+
+@keyframes spark-burst {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--sx, 0), var(--sy, -30px)) scale(0.3);
+  }
+}
+
+@keyframes pop-in {
+  0% {
+    opacity: 0;
+    transform: translateY(14px) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.brand-pop-in {
+  animation: pop-in 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ambient-blob,
+  .brand-text-gradient,
+  .brand-progress-fill::after,
+  .brand-option--selected::after,
+  .brand-halo,
+  .brand-step-icon--active::before,
+  .brand-btn-cta::before {
+    animation: none !important;
+  }
+}

@@ -31,6 +31,23 @@ export const COPY = {
     botonSiguiente: "Siguiente",
     botonVerResultado: "Ver mi resultado",
     calculando: "Analizando tus respuestas…",
+    // Pantalla de análisis entre el quiz y el resultado: simula el trabajo
+    // de revisar el caso antes de entregar el diagnóstico, en vez de una
+    // respuesta fría e inmediata.
+    analisis: {
+      A: [
+        { icono: "🔍", texto: "Leyendo tus respuestas" },
+        { icono: "📊", texto: "Revisando tu situación de negocio" },
+        { icono: "🎯", texto: "Identificando tu cuello de botella" },
+        { icono: "🗺", texto: "Armando cómo puedes escalar con sistema" },
+      ],
+      B: [
+        { icono: "🔍", texto: "Leyendo tus respuestas" },
+        { icono: "📊", texto: "Revisando tu punto de partida" },
+        { icono: "🎯", texto: "Identificando tu principal freno" },
+        { icono: "🗺", texto: "Armando tu camino para lanzar con claridad" },
+      ],
+    },
   },
 
   gate: {

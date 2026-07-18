@@ -1,9 +1,13 @@
 import Link from "next/link";
+import type { Viewport } from "next";
 import { COPY } from "@/content/copy";
+import { BrandBackdrop } from "@/components/brand/BrandBackdrop";
 
 export const metadata = {
   title: "Política de privacidad | Daviddigital",
 };
+
+export const viewport: Viewport = { themeColor: "#0D1420" };
 
 /**
  * PLACEHOLDER LEGAL — David debe revisarla (idealmente con un abogado)
@@ -11,18 +15,18 @@ export const metadata = {
  */
 export default function Privacidad() {
   return (
-    <main className="flex-1 px-5 py-12">
-      <div className="mx-auto max-w-2xl prose-sm">
-        <h1 className="text-2xl font-bold text-stone-900">
+    <BrandBackdrop outerClassName="flex-1" innerClassName="flex-1 px-5 py-14">
+      <div className="brand-glass brand-pop-in mx-auto max-w-2xl rounded-3xl p-7 sm:p-9">
+        <h1 className="font-display text-2xl font-bold text-white">
           Política de privacidad
         </h1>
-        <p className="mt-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 inline-block">
+        <p className="mt-3 text-xs text-amber-300 bg-amber-400/10 border border-amber-400/25 rounded-lg px-3 py-2 inline-block">
           Texto provisional — pendiente de revisión legal antes del lanzamiento.
         </p>
 
-        <div className="mt-6 space-y-5 text-sm text-stone-700 leading-relaxed">
+        <div className="mt-6 space-y-5 text-sm text-white/75 leading-relaxed">
           <section>
-            <h2 className="font-bold text-stone-900">1. Responsable</h2>
+            <h2 className="font-display font-bold text-white">1. Responsable</h2>
             <p>
               {COPY.marca.nombre} ({COPY.marca.instagram}) es responsable del
               tratamiento de los datos que nos facilitas a través del
@@ -31,7 +35,7 @@ export default function Privacidad() {
           </section>
 
           <section>
-            <h2 className="font-bold text-stone-900">2. Qué datos recogemos</h2>
+            <h2 className="font-display font-bold text-white">2. Qué datos recogemos</h2>
             <p>
               Tus respuestas al diagnóstico, tu nombre, tu email y — si decides
               dárnoslo — tu número de WhatsApp. También datos de origen de la
@@ -41,7 +45,7 @@ export default function Privacidad() {
           </section>
 
           <section>
-            <h2 className="font-bold text-stone-900">3. Para qué los usamos</h2>
+            <h2 className="font-display font-bold text-white">3. Para qué los usamos</h2>
             <p>
               Para generar tu diagnóstico, enviarte tu roadmap por email y —
               solo si diste tu consentimiento — enviarte contenido relacionado
@@ -51,7 +55,7 @@ export default function Privacidad() {
           </section>
 
           <section>
-            <h2 className="font-bold text-stone-900">4. Tus derechos</h2>
+            <h2 className="font-display font-bold text-white">4. Tus derechos</h2>
             <p>
               Puedes darte de baja de nuestros emails en cualquier momento
               desde el enlace incluido en cada correo, y solicitar el acceso,
@@ -61,7 +65,7 @@ export default function Privacidad() {
           </section>
 
           <section>
-            <h2 className="font-bold text-stone-900">5. Dónde se guardan</h2>
+            <h2 className="font-display font-bold text-white">5. Dónde se guardan</h2>
             <p>
               Tus datos se almacenan de forma segura en Supabase (base de
               datos) y en nuestro proveedor de email, con acceso restringido.
@@ -70,11 +74,11 @@ export default function Privacidad() {
         </div>
 
         <p className="mt-10">
-          <Link href="/" className="text-indigo-600 underline text-sm">
+          <Link href="/" className="text-[var(--brand-orange-light)] underline text-sm hover:text-white transition">
             ← Volver al inicio
           </Link>
         </p>
       </div>
-    </main>
+    </BrandBackdrop>
   );
 }

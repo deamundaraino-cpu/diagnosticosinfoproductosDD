@@ -1,24 +1,28 @@
 import Link from "next/link";
 import { COPY } from "@/content/copy";
+import { BrandBackdrop } from "@/components/brand/BrandBackdrop";
 
 export default function ResultadoNoEncontrado() {
   return (
-    <main className="flex-1 flex items-center justify-center px-5 py-12">
-      <div className="w-full max-w-md text-center">
+    <BrandBackdrop
+      outerClassName="flex-1"
+      innerClassName="flex-1 flex items-center justify-center px-5 py-12"
+    >
+      <div className="brand-glass brand-pop-in w-full max-w-md rounded-3xl p-8 text-center">
         <p className="text-5xl mb-4">🔍</p>
-        <h1 className="text-2xl font-bold text-stone-900">
+        <h1 className="font-display text-2xl font-bold">
           {COPY.errores.resultadoNoEncontrado}
         </h1>
-        <p className="mt-3 text-stone-600">
+        <p className="mt-3 text-white/70 leading-relaxed">
           {COPY.errores.resultadoNoEncontradoDetalle}
         </p>
         <Link
           href="/diagnostico"
-          className="mt-8 inline-block rounded-xl bg-indigo-600 px-7 py-3.5 text-white font-semibold hover:bg-indigo-700 transition"
+          className="brand-btn-cta font-display mt-8 inline-block rounded-2xl px-7 py-3.5 text-white font-bold"
         >
           {COPY.errores.volverAlInicio}
         </Link>
       </div>
-    </main>
+    </BrandBackdrop>
   );
 }
