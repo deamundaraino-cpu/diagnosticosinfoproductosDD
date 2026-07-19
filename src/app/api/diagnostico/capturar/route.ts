@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getSupabase } from "@/lib/supabase";
 import { enviarRoadmapPorEmail } from "@/lib/email";
+import { sincronizarLeadConEsp } from "@/lib/esp";
 import { generarToken } from "@/lib/token";
 import { ipDePeticion, permitirPeticion } from "@/lib/ratelimit";
 import type { FaseId } from "@/content/tipos";
@@ -82,7 +83,7 @@ export async function POST(request: Request) {
       email_capturado_at: ahora,
     })
     .eq("id", body.id)
-    .select("token_resultado, fase")
+    .select("token_resultado, ruta, fase, score_numerico")
     .single();
 
   if (error || !data) {
@@ -90,14 +91,24 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Diagnóstico no encontrado" }, { status: 404 });
   }
 
-  // El email es secundario al flujo: si falla, la persona igual ve su
-  // resultado en pantalla (queda log para revisarlo).
-  await enviarRoadmapPorEmail({
-    para: body.email,
-    nombre: body.nombre,
-    fase: data.fase as FaseId,
-    token: data.token_resultado,
-  });
+  // Email y ESP son secundarios al flujo: si fallan, la persona igual ve su
+  // resultado en pantalla y el lead ya está en Supabase (queda log).
+  await Promise.all([
+    enviarRoadmapPorEmail({
+      para: body.email,
+      nombre: body.nombre,
+      fase: data.fase as FaseId,
+      token: data.token_resultado,
+    }),
+    sincronizarLeadConEsp({
+      email: body.email,
+      nombre: body.nombre,
+      telefono: body.telefono ?? null,
+      ruta: data.ruta as "A" | "B",
+      fase: data.fase as FaseId,
+      score: data.score_numerico as number,
+    }),
+  ]);
 
   return NextResponse.json({ token: data.token_resultado });
 }
