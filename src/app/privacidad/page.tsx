@@ -17,7 +17,7 @@ export const viewport: Viewport = { themeColor: "#0D1420" };
  */
 
 const FECHA_ACTUALIZACION = "19 de julio de 2026";
-const EMAIL_CONTACTO = "hola@daviddigital.co";
+const EMAIL_CONTACTO = "comunidad@daviddigital.co";
 
 export default function Privacidad() {
   return (
