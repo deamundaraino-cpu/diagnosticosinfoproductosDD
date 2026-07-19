@@ -37,9 +37,13 @@ export default async function LoginAdmin({
           autoFocus
           className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder:text-white/30 focus:border-[var(--brand-orange)]/60 focus:outline-none focus:ring-2 focus:ring-[var(--brand-orange)]/25 transition"
         />
-        {error && (
+        {error === "limite" ? (
+          <p className="text-sm text-red-400">
+            Demasiados intentos. Espera un minuto y vuelve a intentar.
+          </p>
+        ) : error ? (
           <p className="text-sm text-red-400">Password incorrecta.</p>
-        )}
+        ) : null}
         <button
           type="submit"
           className="brand-btn-cta font-display w-full rounded-xl px-4 py-3 text-white font-bold"

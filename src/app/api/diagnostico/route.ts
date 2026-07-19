@@ -7,7 +7,12 @@ import { ipDePeticion, permitirPeticion } from "@/lib/ratelimit";
 
 const bodySchema = z.object({
   ruta: z.enum(["A", "B"]),
-  respuestas: z.record(z.string(), z.string()),
+  // Claves y valores acotados (los ids reales miden <15 chars) y máximo
+  // 12 entradas (la ruta más larga tiene 9 preguntas) — evita payloads
+  // basura de gran tamaño.
+  respuestas: z
+    .record(z.string().max(30), z.string().max(60))
+    .refine((r) => Object.keys(r).length <= 12, "demasiadas respuestas"),
   utm: z
     .object({
       source: z.string().max(200).nullish(),

@@ -40,9 +40,18 @@ export async function POST(request: Request) {
     return NextResponse.json({ token: `demo-A1-${generarToken()}` });
   }
 
+  const supabase = getSupabase();
+
   // Modo demo: el id codifica la fase (demo-A2). El token también, para
   // que /resultado/[token] pueda renderizar sin base de datos.
+  // SOLO se acepta cuando Supabase NO está configurado (desarrollo local):
+  // en producción, un id demo permitiría disparar emails de marca hacia
+  // cualquier dirección sin haber completado un diagnóstico real (relé
+  // de correo abierto).
   if (body.id.startsWith("demo-")) {
+    if (supabase) {
+      return NextResponse.json({ error: "Diagnóstico no encontrado" }, { status: 404 });
+    }
     const fase = body.id.slice(5) as FaseId;
     if (!FASES.includes(fase)) {
       return NextResponse.json({ error: "Datos inválidos" }, { status: 400 });
@@ -57,7 +66,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ token });
   }
 
-  const supabase = getSupabase();
   if (!supabase) {
     return NextResponse.json({ error: "Base de datos no disponible" }, { status: 503 });
   }

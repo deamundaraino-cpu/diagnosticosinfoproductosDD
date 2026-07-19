@@ -17,13 +17,16 @@ export const viewport: Viewport = { themeColor: "#0D1420" };
 const FASES: FaseId[] = ["A1", "A2", "A3", "B1", "B2", "B3"];
 
 async function faseDeToken(token: string): Promise<FaseId | null> {
-  // Tokens demo (sin base de datos): demo-<fase>-<random>
+  const supabase = getSupabase();
+
+  // Tokens demo (sin base de datos): demo-<fase>-<random>. Solo válidos
+  // en desarrollo local — en producción todos los resultados son reales.
   if (token.startsWith("demo-")) {
+    if (supabase) return null;
     const fase = token.split("-")[1] as FaseId;
     return FASES.includes(fase) ? fase : null;
   }
 
-  const supabase = getSupabase();
   if (!supabase) return null;
 
   const { data } = await supabase
