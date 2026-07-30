@@ -14,11 +14,15 @@ import type { FaseId, Roadmap, TagCuelloDeBotella } from "./tipos";
  */
 
 /**
- * CTAs de la asesoría 1:1 (oferta paga, activada 2026-07-30 para llenar el
- * hueco de catálogo en retención/recompra y tiempo/operación — problemas
- * idiosincráticos de cada negocio, no resolubles con contenido genérico).
- * Reutilizados en A1/A2/A3: el tag de cuello de botella importa más que la
- * fase para decidir si esta oferta aplica. Nunca revela precio.
+ * Mapeo de escalera de productos (activado 2026-07-30): cada fase/tag
+ * recomienda el producto real del catálogo de David que mejor calza con
+ * ese avatar y nivel de consciencia — nunca el genérico "sígueme". Nunca
+ * revela precio ni cita textualmente títulos con cifras de ingreso (regla
+ * de marca: no prometer ingresos garantizados), aunque el producto se
+ * mencione descriptivamente.
+ *
+ * Ruta A: el tag de cuello de botella importa más que la fase para decidir
+ * qué ofrecer — por eso vive en `ctaPorTag`, no en el `cta` genérico.
  */
 const CTA_ASESORIA_RETENCION =
   "Este cuello de botella casi nunca se resuelve con una fórmula genérica — cada negocio pierde clientes por razones distintas, y ahí es donde una mirada externa vale más que otro curso. Tengo una asesoría 1:1 de auditoría de retención para revisar tu caso puntual, sin plantillas. Escríbeme por @daviddigital.co si quieres explorarla.";
@@ -26,9 +30,23 @@ const CTA_ASESORIA_RETENCION =
 const CTA_ASESORIA_TIEMPO =
   "Cuando el cuello de botella es tu propio tiempo, ningún contenido te lo devuelve solo — hace falta rediseñar tu operación con alguien que vea lo que tú, desde adentro, no ves. Ofrezco una asesoría 1:1 de auditoría de sistema para casos así. Escríbeme por @daviddigital.co si quieres explorarla.";
 
-const CTA_POR_TAG_RUTA_A: Partial<Record<TagCuelloDeBotella, string>> = {
+const CTA_LEADMAGNETS_IA =
+  "Si tu cuello de botella es conseguir leads, tengo un workshop corto sobre cómo crear leadmagnets efectivos apoyándote en IA para atraer a las personas correctas, no a cualquiera. Escríbeme por @daviddigital.co si quieres verlo.";
+
+const CTA_CREADOR_ANUNCIOS =
+  "Si tienes audiencia pero no convierte, casi siempre el problema está en cómo comunicas tu oferta en el anuncio, no en el producto. Tengo un ebook con la metodología completa para crear anuncios que sí venden. Escríbeme por @daviddigital.co si quieres conocerlo.";
+
+/** Ruta A, fases A2/A3: aplica igual sin importar leads/conversión — solo cambia con retención/tiempo. */
+const CTA_POR_TAG_ASESORIA: Partial<Record<TagCuelloDeBotella, string>> = {
   retencion: CTA_ASESORIA_RETENCION,
   tiempo: CTA_ASESORIA_TIEMPO,
+};
+
+/** Ruta A, fase A1: leads y conversión sí necesitan productos distintos entre sí. */
+const CTA_POR_TAG_A1: Partial<Record<TagCuelloDeBotella, string>> = {
+  leads: CTA_LEADMAGNETS_IA,
+  conversion: CTA_CREADOR_ANUNCIOS,
+  ...CTA_POR_TAG_ASESORIA,
 };
 
 export const ROADMAPS: Record<FaseId, Roadmap> = {
@@ -47,7 +65,7 @@ export const ROADMAPS: Record<FaseId, Roadmap> = {
         "Documenta tu proceso de venta actual de punta a punta (de dónde llega la gente hasta que paga). Lo que no está escrito no se puede automatizar — y ese documento es el plano de tu futuro sistema.",
       ],
       cta: "En @daviddigital.co comparto cómo pasar de vender con esfuerzo a vender con sistema, con números reales y sin humo. Sígueme para ver el paso a paso.",
-      ctaPorTag: CTA_POR_TAG_RUTA_A,
+      ctaPorTag: CTA_POR_TAG_A1,
     },
   },
   A2: {
@@ -64,8 +82,8 @@ export const ROADMAPS: Record<FaseId, Roadmap> = {
         "Instala un embudo evergreen mínimo para tu producto de entrada: contenido → captura → secuencia de emails → oferta. Uno solo, simple, midiendo conversión en cada paso.",
         "Define tus métricas de control semanales (CAC, conversión por etapa, LTV) y revísalas cada lunes. En esta fase el problema ya no es hacer más — es saber qué pieza mover.",
       ],
-      cta: "En @daviddigital.co muestro cómo conectar esas piezas en un sistema evergreen que vende sin depender de lanzamientos. Sígueme y te enseño el proceso con data real.",
-      ctaPorTag: CTA_POR_TAG_RUTA_A,
+      cta: "Conectar esas piezas en un sistema evergreen real es exactamente lo que trabajo en Fórmula 7X, mi programa completo de tráfico perpetuo con Meta Ads. Escríbeme por @daviddigital.co si quieres saber si es para ti.",
+      ctaPorTag: CTA_POR_TAG_ASESORIA,
     },
   },
   A3: {
@@ -82,8 +100,8 @@ export const ROADMAPS: Record<FaseId, Roadmap> = {
         "Audita tu CAC por canal y duplica presupuesto solo donde el retorno está probado. En esta fase, escalar tráfico sin datos es la forma más rápida de quemar caja.",
         "Saca tu operación de tu cabeza: procesos documentados, al menos una contratación clave y un tablero de métricas que puedas leer en 10 minutos. El cuello de botella de esta fase eres tú.",
       ],
-      cta: "En @daviddigital.co hablo de escalar de low ticket a high ticket con estrategia evergreen — desde ejecución real, no teoría. Sígueme para el siguiente nivel.",
-      ctaPorTag: CTA_POR_TAG_RUTA_A,
+      cta: "En este punto tengo dos recursos que te sirven: Fórmula 7X, el sistema completo de tráfico perpetuo, y un ebook enfocado en optimizar y rentabilizar las campañas que ya corres. Escríbeme por @daviddigital.co para ver cuál calza con tu caso.",
+      ctaPorTag: CTA_POR_TAG_ASESORIA,
     },
   },
   B1: {
@@ -100,7 +118,7 @@ export const ROADMAPS: Record<FaseId, Roadmap> = {
         "Elige las 2 ideas más fuertes y habla con 5 personas reales de cada una: qué les duele, qué han intentado, qué pagarían por resolver. Conversaciones, no encuestas.",
         "Decide con fecha: en máximo 2 semanas, elige UNA idea y aparca las demás sin culpa. La claridad no llega pensando — llega eligiendo y probando.",
       ],
-      cta: "En @daviddigital.co comparto cómo pasar de 'tengo una idea' a un negocio digital real, paso a paso y sin humo. Sígueme — este camino es más simple cuando alguien ya lo recorrió.",
+      cta: "Para dar este primer paso con guía en vez de a ciegas, tengo un ebook que te lleva de la mano: definir tu cliente ideal y construir tu primer producto digital con ayuda de IA y Canva. Escríbeme por @daviddigital.co si quieres que te cuente más.",
     },
   },
   B2: {
@@ -117,7 +135,7 @@ export const ROADMAPS: Record<FaseId, Roadmap> = {
         "Ofrécela en pequeño antes de construirla en grande: una asesoría, un taller en vivo, una versión beta a un grupo reducido. Que alguien pague (aunque sea poco) es la única validación que cuenta.",
         "Empieza a publicar contenido sobre tu tema 2-3 veces por semana, aunque tu audiencia sea pequeña. La audiencia no se junta cuando lanzas — se construye antes de lanzar.",
       ],
-      cta: "En @daviddigital.co enseño cómo validar y lanzar tu primer infoproducto sin gastarte meses construyendo a ciegas. Sígueme y hagamos esa validación bien hecha.",
+      cta: "Ya sabes qué quieres construir — lo que necesitas es la ruta más rápida para estructurarlo y lanzarlo sin complicarte. Tengo un ebook diseñado exactamente para eso, sin herramientas costosas ni experiencia previa. Escríbeme por @daviddigital.co si quieres conocerlo.",
     },
   },
   B3: {
@@ -134,7 +152,7 @@ export const ROADMAPS: Record<FaseId, Roadmap> = {
         "Monta tu sistema mínimo de venta: una página simple que explique la oferta, un medio de pago automático y una forma de entrega ordenada. Nada sofisticado — que funcione sin ti en el chat.",
         "Documenta los resultados de tus primeros clientes desde ya (con su permiso). Esos casos son el activo que te va a permitir subir el nivel de tu oferta después.",
       ],
-      cta: "En @daviddigital.co muestro cómo pasar de ventas informales a un sistema que vende de forma constante. Sígueme — el salto que viene es el más divertido.",
+      cta: "Ya validaste que hay demanda real — el paso que sigue es empaquetar eso en un producto formal, con estructura y precio fijo, en vez de cotizar cada vez. Tengo un ebook que te lleva paso a paso en ese salto. Escríbeme por @daviddigital.co si quieres el mapa completo.",
     },
   },
 };
