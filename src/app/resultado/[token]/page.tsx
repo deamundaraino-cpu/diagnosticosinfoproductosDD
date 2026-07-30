@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import type { Viewport } from "next";
 import { getSupabase } from "@/lib/supabase";
-import { ROADMAPS } from "@/content/roadmaps";
+import { ctaEfectivo, ROADMAPS } from "@/content/roadmaps";
 import { COPY } from "@/content/copy";
 import type { FaseId } from "@/content/tipos";
 import { BadgePlaceholder } from "@/components/BadgePlaceholder";
@@ -16,7 +16,12 @@ export const viewport: Viewport = { themeColor: "#0D1420" };
 
 const FASES: FaseId[] = ["A1", "A2", "A3", "B1", "B2", "B3"];
 
-async function faseDeToken(token: string): Promise<FaseId | null> {
+interface DatosResultado {
+  fase: FaseId;
+  tag: string | null;
+}
+
+async function datosDeToken(token: string): Promise<DatosResultado | null> {
   const supabase = getSupabase();
 
   // Tokens demo (sin base de datos): demo-<fase>-<random>. Solo válidos
@@ -24,19 +29,19 @@ async function faseDeToken(token: string): Promise<FaseId | null> {
   if (token.startsWith("demo-")) {
     if (supabase) return null;
     const fase = token.split("-")[1] as FaseId;
-    return FASES.includes(fase) ? fase : null;
+    return FASES.includes(fase) ? { fase, tag: null } : null;
   }
 
   if (!supabase) return null;
 
   const { data } = await supabase
     .from("diagnosticos")
-    .select("fase")
+    .select("fase, cuello_de_botella")
     .eq("token_resultado", token)
     .maybeSingle();
 
   if (!data || !FASES.includes(data.fase as FaseId)) return null;
-  return data.fase as FaseId;
+  return { fase: data.fase as FaseId, tag: data.cuello_de_botella as string | null };
 }
 
 export default async function PaginaResultado({
@@ -45,8 +50,9 @@ export default async function PaginaResultado({
   params: Promise<{ token: string }>;
 }) {
   const { token } = await params;
-  const fase = await faseDeToken(token);
-  if (!fase) notFound();
+  const datos = await datosDeToken(token);
+  if (!datos) notFound();
+  const { fase, tag } = datos;
 
   const roadmap = ROADMAPS[fase];
   const esDemo = token.startsWith("demo-");
@@ -107,6 +113,10 @@ export default async function PaginaResultado({
               </li>
             ))}
           </ol>
+
+          <p className="mt-6 text-sm sm:text-base text-white/70 leading-relaxed">
+            {ctaEfectivo(roadmap, tag)}
+          </p>
 
           {!esDemo && (
             <p className="mt-8 rounded-xl bg-white/5 border border-white/10 text-white/60 text-sm px-4 py-3">

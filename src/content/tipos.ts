@@ -29,6 +29,9 @@ export interface PreguntaTag {
 
 export type Pregunta = PreguntaPuntuada | PreguntaTag;
 
+/** Tags de cuello de botella de Ruta A (pregunta 9) — usados para ofertas condicionales. */
+export type TagCuelloDeBotella = "leads" | "conversion" | "retencion" | "tiempo";
+
 export interface Roadmap {
   fase: FaseId;
   /** Visible antes de capturar el email: valida el diagnóstico y genera curiosidad. */
@@ -40,6 +43,13 @@ export interface Roadmap {
   parteB: {
     pasos: [string, string, string];
     cta: string;
+    /**
+     * CTA alternativo según el cuello de botella (solo Ruta A). Si el tag
+     * de esta persona tiene entrada aquí, reemplaza a `cta`; si no, se usa
+     * el genérico. Permite ofrecer productos/servicios específicos (ej. la
+     * asesoría 1:1) solo a quien tiene el problema que resuelven.
+     */
+    ctaPorTag?: Partial<Record<TagCuelloDeBotella, string>>;
   };
   status: "placeholder" | "aprobado";
 }

@@ -83,7 +83,7 @@ export async function POST(request: Request) {
       email_capturado_at: ahora,
     })
     .eq("id", body.id)
-    .select("token_resultado, ruta, fase, score_numerico")
+    .select("token_resultado, ruta, fase, score_numerico, cuello_de_botella")
     .single();
 
   if (error || !data) {
@@ -99,6 +99,7 @@ export async function POST(request: Request) {
       nombre: body.nombre,
       fase: data.fase as FaseId,
       token: data.token_resultado,
+      tag: data.cuello_de_botella as string | null,
     }),
     sincronizarLeadConEsp({
       email: body.email,

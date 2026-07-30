@@ -1,6 +1,6 @@
 import "server-only";
 import { Resend } from "resend";
-import { roadmapDeFase } from "@/content/roadmaps";
+import { ctaEfectivo, roadmapDeFase } from "@/content/roadmaps";
 import { COPY } from "@/content/copy";
 import type { FaseId } from "@/content/tipos";
 
@@ -32,6 +32,8 @@ interface EnvioRoadmap {
   nombre: string | null;
   fase: FaseId;
   token: string;
+  /** Tag de cuello de botella (Ruta A) para mostrar la oferta condicional correcta. */
+  tag?: string | null;
 }
 
 export async function enviarRoadmapPorEmail({
@@ -39,6 +41,7 @@ export async function enviarRoadmapPorEmail({
   nombre,
   fase,
   token,
+  tag = null,
 }: EnvioRoadmap): Promise<{ enviado: boolean }> {
   const apiKey = process.env.RESEND_API_KEY;
   const from = process.env.EMAIL_FROM;
@@ -132,7 +135,7 @@ export async function enviarRoadmapPorEmail({
               </table>
 
               <p style="margin:4px 0 0 0; font-family: Helvetica, Arial, sans-serif; font-size:14px; line-height:1.6; color:${COLOR.textoMuted};">
-                ${roadmap.parteB.cta}
+                ${ctaEfectivo(roadmap, tag)}
               </p>
             </td>
           </tr>

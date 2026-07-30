@@ -1,4 +1,4 @@
-import type { FaseId, Roadmap } from "./tipos";
+import type { FaseId, Roadmap, TagCuelloDeBotella } from "./tipos";
 
 /**
  * TEXTOS PROVISIONALES (status: "placeholder").
@@ -12,6 +12,24 @@ import type { FaseId, Roadmap } from "./tipos";
  * Cuando David apruebe los definitivos: reemplazar el texto y cambiar
  * status a "aprobado". No hace falta tocar ningún otro archivo.
  */
+
+/**
+ * CTAs de la asesoría 1:1 (oferta paga, activada 2026-07-30 para llenar el
+ * hueco de catálogo en retención/recompra y tiempo/operación — problemas
+ * idiosincráticos de cada negocio, no resolubles con contenido genérico).
+ * Reutilizados en A1/A2/A3: el tag de cuello de botella importa más que la
+ * fase para decidir si esta oferta aplica. Nunca revela precio.
+ */
+const CTA_ASESORIA_RETENCION =
+  "Este cuello de botella casi nunca se resuelve con una fórmula genérica — cada negocio pierde clientes por razones distintas, y ahí es donde una mirada externa vale más que otro curso. Tengo una asesoría 1:1 de auditoría de retención para revisar tu caso puntual, sin plantillas. Escríbeme por @daviddigital.co si quieres explorarla.";
+
+const CTA_ASESORIA_TIEMPO =
+  "Cuando el cuello de botella es tu propio tiempo, ningún contenido te lo devuelve solo — hace falta rediseñar tu operación con alguien que vea lo que tú, desde adentro, no ves. Ofrezco una asesoría 1:1 de auditoría de sistema para casos así. Escríbeme por @daviddigital.co si quieres explorarla.";
+
+const CTA_POR_TAG_RUTA_A: Partial<Record<TagCuelloDeBotella, string>> = {
+  retencion: CTA_ASESORIA_RETENCION,
+  tiempo: CTA_ASESORIA_TIEMPO,
+};
 
 export const ROADMAPS: Record<FaseId, Roadmap> = {
   A1: {
@@ -29,6 +47,7 @@ export const ROADMAPS: Record<FaseId, Roadmap> = {
         "Documenta tu proceso de venta actual de punta a punta (de dónde llega la gente hasta que paga). Lo que no está escrito no se puede automatizar — y ese documento es el plano de tu futuro sistema.",
       ],
       cta: "En @daviddigital.co comparto cómo pasar de vender con esfuerzo a vender con sistema, con números reales y sin humo. Sígueme para ver el paso a paso.",
+      ctaPorTag: CTA_POR_TAG_RUTA_A,
     },
   },
   A2: {
@@ -46,6 +65,7 @@ export const ROADMAPS: Record<FaseId, Roadmap> = {
         "Define tus métricas de control semanales (CAC, conversión por etapa, LTV) y revísalas cada lunes. En esta fase el problema ya no es hacer más — es saber qué pieza mover.",
       ],
       cta: "En @daviddigital.co muestro cómo conectar esas piezas en un sistema evergreen que vende sin depender de lanzamientos. Sígueme y te enseño el proceso con data real.",
+      ctaPorTag: CTA_POR_TAG_RUTA_A,
     },
   },
   A3: {
@@ -63,6 +83,7 @@ export const ROADMAPS: Record<FaseId, Roadmap> = {
         "Saca tu operación de tu cabeza: procesos documentados, al menos una contratación clave y un tablero de métricas que puedas leer en 10 minutos. El cuello de botella de esta fase eres tú.",
       ],
       cta: "En @daviddigital.co hablo de escalar de low ticket a high ticket con estrategia evergreen — desde ejecución real, no teoría. Sígueme para el siguiente nivel.",
+      ctaPorTag: CTA_POR_TAG_RUTA_A,
     },
   },
   B1: {
@@ -120,4 +141,10 @@ export const ROADMAPS: Record<FaseId, Roadmap> = {
 
 export function roadmapDeFase(fase: FaseId): Roadmap {
   return ROADMAPS[fase];
+}
+
+/** CTA a mostrar: el específico del tag si existe, si no el genérico de la fase. */
+export function ctaEfectivo(roadmap: Roadmap, tag: string | null): string {
+  const especifico = tag ? roadmap.parteB.ctaPorTag?.[tag as TagCuelloDeBotella] : undefined;
+  return especifico ?? roadmap.parteB.cta;
 }
