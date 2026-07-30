@@ -70,8 +70,6 @@ export const COPY = {
     guardado:
       "📩 Te enviamos este roadmap a tu correo para que vuelvas a él cuando quieras.",
     ctaTitulo: "¿Quieres el paso a paso completo?",
-    ctaTexto:
-      "En Instagram comparto cómo construir un negocio digital que escala con sistema y estrategia evergreen — con números reales, desde ejecución, no teoría.",
     ctaBoton: "Seguir a @daviddigital.co",
   },
 

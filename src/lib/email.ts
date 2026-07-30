@@ -134,9 +134,6 @@ export async function enviarRoadmapPorEmail({
                 ${filasPasos}
               </table>
 
-              <p style="margin:4px 0 0 0; font-family: Helvetica, Arial, sans-serif; font-size:14px; line-height:1.6; color:${COLOR.textoMuted};">
-                ${ctaEfectivo(roadmap, tag)}
-              </p>
             </td>
           </tr>
 
@@ -162,7 +159,7 @@ export async function enviarRoadmapPorEmail({
                 ${COPY.resultado.ctaTitulo}
               </p>
               <p style="margin:0 0 20px 0; font-family: Helvetica, Arial, sans-serif; font-size:13px; line-height:1.6; color:${COLOR.textoMuted};">
-                ${COPY.resultado.ctaTexto}
+                ${ctaEfectivo(roadmap, tag)}
               </p>
               <table role="presentation" cellpadding="0" cellspacing="0">
                 <tr>

@@ -114,10 +114,6 @@ export default async function PaginaResultado({
             ))}
           </ol>
 
-          <p className="mt-6 text-sm sm:text-base text-white/70 leading-relaxed">
-            {ctaEfectivo(roadmap, tag)}
-          </p>
-
           {!esDemo && (
             <p className="mt-8 rounded-xl bg-white/5 border border-white/10 text-white/60 text-sm px-4 py-3">
               {COPY.resultado.guardado}
@@ -134,7 +130,7 @@ export default async function PaginaResultado({
           <div className="relative z-10">
             <h2 className="font-display text-xl font-bold">{COPY.resultado.ctaTitulo}</h2>
             <p className="mt-2 text-sm text-white/70 leading-relaxed max-w-sm mx-auto">
-              {COPY.resultado.ctaTexto}
+              {ctaEfectivo(roadmap, tag)}
             </p>
             <a
               href={COPY.marca.instagramUrl}
