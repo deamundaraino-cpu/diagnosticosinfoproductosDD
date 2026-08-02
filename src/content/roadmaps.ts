@@ -161,7 +161,24 @@ export function roadmapDeFase(fase: FaseId): Roadmap {
   return ROADMAPS[fase];
 }
 
-/** CTA a mostrar: el específico del tag si existe, si no el genérico de la fase. */
+/**
+ * Interruptor de la escalera de productos.
+ *
+ * Durante la fase de investigación de mercado el diagnóstico no vende: el
+ * bloque final invita a una llamada de investigación en vez de recomendar
+ * un producto. El mapeo fase/tag → producto NO se borra, solo queda
+ * inactivo, para poder reactivarlo con textos nuevos sin rehacerlo.
+ *
+ * Para reactivarlo: RECOMENDACION_PRODUCTO_ACTIVA=true en el entorno.
+ */
+export function recomendacionProductoActiva(): boolean {
+  return process.env.NEXT_PUBLIC_RECOMENDACION_PRODUCTO === "true";
+}
+
+/**
+ * CTA a mostrar: el específico del tag si existe, si no el genérico de la
+ * fase. Solo se usa cuando la recomendación de producto está activa.
+ */
 export function ctaEfectivo(roadmap: Roadmap, tag: string | null): string {
   const especifico = tag ? roadmap.parteB.ctaPorTag?.[tag as TagCuelloDeBotella] : undefined;
   return especifico ?? roadmap.parteB.cta;

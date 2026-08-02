@@ -1,7 +1,12 @@
 import "server-only";
 import { Resend } from "resend";
-import { ctaEfectivo, roadmapDeFase } from "@/content/roadmaps";
+import {
+  ctaEfectivo,
+  recomendacionProductoActiva,
+  roadmapDeFase,
+} from "@/content/roadmaps";
 import { COPY } from "@/content/copy";
+import { urlAgendamiento } from "@/lib/agenda";
 import type { FaseId } from "@/content/tipos";
 
 /**
@@ -34,6 +39,8 @@ interface EnvioRoadmap {
   token: string;
   /** Tag de cuello de botella (Ruta A) para mostrar la oferta condicional correcta. */
   tag?: string | null;
+  /** Id del diagnóstico: viaja al agendamiento para cruzar llamada ↔ respuestas. */
+  identificador?: string | null;
 }
 
 export async function enviarRoadmapPorEmail({
@@ -42,6 +49,7 @@ export async function enviarRoadmapPorEmail({
   fase,
   token,
   tag = null,
+  identificador = null,
 }: EnvioRoadmap): Promise<{ enviado: boolean }> {
   const apiKey = process.env.RESEND_API_KEY;
   const from = process.env.EMAIL_FROM;
@@ -56,6 +64,24 @@ export async function enviarRoadmapPorEmail({
   const roadmap = roadmapDeFase(fase);
   const urlResultado = `${process.env.NEXT_PUBLIC_SITE_URL ?? ""}/resultado/${token}`;
   const saludo = nombre ? `Hola ${escaparHtml(nombre)},` : "Hola,";
+
+  // Bloque final: recomendación de producto (desactivada durante la fase
+  // de investigación) o invitación a la llamada de 30 minutos.
+  const vendiendo = recomendacionProductoActiva();
+  const urlAgenda = identificador ? urlAgendamiento(identificador) : null;
+  const bloqueFinal = vendiendo
+    ? {
+        titulo: COPY.resultado.ctaTitulo,
+        cuerpo: ctaEfectivo(roadmap, tag),
+        boton: COPY.resultado.ctaBoton,
+        enlace: COPY.marca.instagramUrl,
+      }
+    : {
+        titulo: COPY.llamada.titulo,
+        cuerpo: COPY.llamada.cuerpo,
+        boton: urlAgenda ? COPY.llamada.boton : COPY.llamada.sinAgenda,
+        enlace: urlAgenda ?? COPY.marca.instagramUrl,
+      };
 
   const filasPasos = roadmap.parteB.pasos
     .map(
@@ -152,20 +178,20 @@ export async function enviarRoadmapPorEmail({
             </td>
           </tr>
 
-          <!-- Tarjeta secundaria: seguir en Instagram -->
+          <!-- Tarjeta secundaria: bloque final (llamada o producto) -->
           <tr>
             <td align="center" style="background-color:${COLOR.tarjeta}; border:1px solid ${COLOR.borde}; border-radius:16px; padding:28px;">
               <p style="margin:0 0 6px 0; font-family: Helvetica, Arial, sans-serif; font-size:16px; font-weight:700; color:#ffffff;">
-                ${COPY.resultado.ctaTitulo}
+                ${bloqueFinal.titulo}
               </p>
               <p style="margin:0 0 20px 0; font-family: Helvetica, Arial, sans-serif; font-size:13px; line-height:1.6; color:${COLOR.textoMuted};">
-                ${ctaEfectivo(roadmap, tag)}
+                ${bloqueFinal.cuerpo}
               </p>
               <table role="presentation" cellpadding="0" cellspacing="0">
                 <tr>
                   <td style="background-color:${COLOR.naranja}; border-radius:10px;">
-                    <a href="${COPY.marca.instagramUrl}" style="display:inline-block; padding:12px 22px; font-family: Helvetica, Arial, sans-serif; font-size:13px; font-weight:700; color:#ffffff; text-decoration:none;">
-                      ${COPY.resultado.ctaBoton}
+                    <a href="${bloqueFinal.enlace}" style="display:inline-block; padding:12px 22px; font-family: Helvetica, Arial, sans-serif; font-size:13px; font-weight:700; color:#ffffff; text-decoration:none;">
+                      ${bloqueFinal.boton}
                     </a>
                   </td>
                 </tr>

@@ -51,7 +51,13 @@ const bodySchema = z.object({
   ruta: z.enum(["A", "B"]),
   respuestas: z
     .record(z.string().max(30), z.string().max(60))
-    .refine((r) => Object.keys(r).length <= 12, "demasiadas respuestas"),
+    .refine((r) => Object.keys(r).length <= 14, "demasiadas respuestas"),
+  // Texto libre: pregunta abierta y detalle de "Otra cosa". El límite
+  // real por pregunta lo recorta el scoring; aquí solo se acota el tamaño.
+  textos: z
+    .record(z.string().max(30), z.string().max(600))
+    .refine((t) => Object.keys(t).length <= 4, "demasiados textos")
+    .optional(),
   ultimaPregunta: z.string().max(30),
   /** Id base para deduplicar pixel ↔ API de Conversiones. */
   idBase: z.string().min(8).max(100),
@@ -72,7 +78,7 @@ export async function POST(request: Request) {
   }
 
   // Descarta ids de pregunta/opción que no existan en el catálogo real.
-  const parcial = detallarParcial(body.ruta, body.respuestas);
+  const parcial = detallarParcial(body.ruta, body.respuestas, body.textos ?? {});
   if (parcial.preguntasRespondidas === 0) {
     return NextResponse.json({ error: "Sin respuestas válidas" }, { status: 400 });
   }

@@ -9,7 +9,7 @@ import {
 } from "@/content/preguntas";
 import { ROADMAPS } from "@/content/roadmaps";
 import { COPY } from "@/content/copy";
-import type { FaseId, Ruta } from "@/content/tipos";
+import type { FaseId, Pregunta, PreguntaAbierta, Ruta } from "@/content/tipos";
 import { leerUtm, leerCookiesMeta } from "@/lib/utm";
 import { trackEvento } from "@/lib/analytics";
 import { trackPixel } from "@/lib/meta-pixel";
@@ -51,14 +51,25 @@ export function Quiz() {
   const [ruta, setRuta] = useState<Ruta | null>(null);
   const [indice, setIndice] = useState(0);
   const [respuestas, setRespuestas] = useState<Record<string, string>>({});
+  // Texto libre: pregunta abierta de investigación y detalle de "Otra cosa".
+  const [textos, setTextos] = useState<Record<string, string>>({});
   const [resultado, setResultado] = useState<ResultadoQuiz | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pasoAnalisis, setPasoAnalisis] = useState(0);
+  /**
+   * Opción de etiqueta elegida que aún no avanza porque exige un detalle
+   * escrito ("Otra cosa"). Mientras esté puesta, la pantalla no pasa.
+   */
+  const [seleccionPendiente, setSeleccionPendiente] = useState<string | null>(null);
 
   const preguntas = useMemo(
     () => (ruta ? preguntasDeRuta(ruta) : []),
     [ruta]
   );
+
+  // En una variable propia para que TypeScript pueda estrechar el tipo de
+  // pregunta (puntuada / etiqueta / abierta) al renderizar cada pantalla.
+  const preguntaActual: Pregunta | undefined = preguntas[indice];
 
   // Avanza los pasos de la pantalla de análisis mientras está activa.
   useEffect(() => {
@@ -76,20 +87,34 @@ export function Quiz() {
     trackEvento("quiz_iniciado", { ruta: rutaElegida });
   }
 
-  async function responder(preguntaId: string, opcionId: string) {
+  /**
+   * Avanza a la pantalla siguiente (o completa el quiz si era la última),
+   * guardando el progreso por el camino.
+   */
+  async function avanzar(
+    preguntaId: string,
+    nuevasRespuestas: Record<string, string>,
+    nuevosTextos: Record<string, string>
+  ) {
     const esPrimera = Object.keys(respuestas).length === 0;
-    const nuevas = { ...respuestas, [preguntaId]: opcionId };
-    setRespuestas(nuevas);
+    setRespuestas(nuevasRespuestas);
+    setTextos(nuevosTextos);
+    setSeleccionPendiente(null);
     trackEvento("pregunta_respondida", {
       ruta,
       pregunta: preguntaId,
-      opcion: opcionId,
+      opcion: nuevasRespuestas[preguntaId] ?? "texto_libre",
     });
 
     // Guardado progresivo: la fila nace aquí, en la primera respuesta.
     // Sin await — la persona nunca espera a la medición.
     if (ruta) {
-      registrarProgreso({ ruta, respuestas: nuevas, ultimaPregunta: preguntaId });
+      registrarProgreso({
+        ruta,
+        respuestas: nuevasRespuestas,
+        textos: nuevosTextos,
+        ultimaPregunta: preguntaId,
+      });
       if (esPrimera) {
         trackPixel("DiagnosticoIniciado", idBaseDeSesion(), { ruta });
       }
@@ -99,10 +124,29 @@ export function Quiz() {
       setIndice(indice + 1);
       return;
     }
-    await completarQuiz(nuevas);
+    await completarQuiz(nuevasRespuestas, nuevosTextos);
   }
 
-  async function completarQuiz(todas: Record<string, string>) {
+  /** Clic en una opción de pregunta puntuada o de etiqueta. */
+  function elegirOpcion(pregunta: Pregunta, opcionId: string) {
+    if (pregunta.tipo === "abierta") return;
+
+    const opcion = pregunta.opciones.find((o) => o.id === opcionId);
+    // "Otra cosa": no avanza, despliega el campo obligatorio en la misma
+    // pantalla y espera a que se escriba algo.
+    if (pregunta.tipo === "tag" && opcion && "requiereDetalle" in opcion && opcion.requiereDetalle) {
+      setSeleccionPendiente(opcionId);
+      setRespuestas({ ...respuestas, [pregunta.id]: opcionId });
+      return;
+    }
+
+    avanzar(pregunta.id, { ...respuestas, [pregunta.id]: opcionId }, textos);
+  }
+
+  async function completarQuiz(
+    todas: Record<string, string>,
+    todosLosTextos: Record<string, string>
+  ) {
     setEtapa("calculando");
     setError(null);
     const inicio = Date.now();
@@ -120,6 +164,7 @@ export function Quiz() {
         body: JSON.stringify({
           ruta,
           respuestas: todas,
+          textos: todosLosTextos,
           sesionId: sesionIdGuardado(),
           idBase,
           utm: utm
@@ -163,6 +208,7 @@ export function Quiz() {
   }
 
   function retroceder() {
+    setSeleccionPendiente(null);
     if (indice > 0) {
       setIndice(indice - 1);
     } else {
@@ -201,7 +247,7 @@ export function Quiz() {
           </Pantalla>
         )}
 
-        {etapa === "preguntas" && ruta && (
+        {etapa === "preguntas" && ruta && preguntaActual && (
           <Pantalla>
             <div className="mb-6">
               <div className="flex justify-between text-xs text-[var(--brand-text-muted)] mb-2.5">
@@ -224,19 +270,52 @@ export function Quiz() {
             </div>
 
             <h1 className="font-display text-xl sm:text-2xl font-bold leading-snug mb-6">
-              {preguntas[indice].texto}
+              {preguntaActual.texto}
             </h1>
-            <div className="space-y-3">
-              {preguntas[indice].opciones.map((opcion) => (
-                <BotonOpcion
-                  key={opcion.id}
-                  seleccionada={respuestas[preguntas[indice].id] === opcion.id}
-                  onClick={() => responder(preguntas[indice].id, opcion.id)}
-                >
-                  {opcion.texto}
-                </BotonOpcion>
-              ))}
-            </div>
+
+            {preguntaActual.tipo === "abierta" ? (
+              <PantallaAbierta
+                key={preguntaActual.id}
+                pregunta={preguntaActual}
+                valorInicial={textos[preguntaActual.id] ?? ""}
+                onContinuar={(texto) =>
+                  avanzar(preguntaActual.id, respuestas, {
+                    ...textos,
+                    [preguntaActual.id]: texto,
+                  })
+                }
+              />
+            ) : (
+              <>
+                <div className="space-y-3">
+                  {preguntaActual.opciones.map((opcion) => (
+                    <BotonOpcion
+                      key={opcion.id}
+                      seleccionada={respuestas[preguntaActual.id] === opcion.id}
+                      onClick={() => elegirOpcion(preguntaActual, opcion.id)}
+                    >
+                      {opcion.texto}
+                    </BotonOpcion>
+                  ))}
+                </div>
+
+                {/* "Otra cosa": campo obligatorio en la misma pantalla */}
+                {seleccionPendiente && (
+                  <CampoDetalle
+                    key={`${preguntaActual.id}-detalle`}
+                    valorInicial={textos[preguntaActual.id] ?? ""}
+                    onContinuar={(detalle) =>
+                      avanzar(
+                        preguntaActual.id,
+                        { ...respuestas, [preguntaActual.id]: seleccionPendiente },
+                        { ...textos, [preguntaActual.id]: detalle }
+                      )
+                    }
+                  />
+                )}
+              </>
+            )}
+
             {error && <p className="mt-4 text-sm text-red-400">{error}</p>}
           </Pantalla>
         )}
@@ -404,6 +483,104 @@ function GateResultado({
         </p>
       </form>
     </Pantalla>
+  );
+}
+
+/**
+ * Campo obligatorio que se despliega al elegir "Otra cosa". Hasta que no
+ * se escriba algo, el botón queda inhabilitado y la pantalla no avanza.
+ */
+function CampoDetalle({
+  valorInicial,
+  onContinuar,
+}: {
+  valorInicial: string;
+  onContinuar: (detalle: string) => void;
+}) {
+  const MAX = 300;
+  const [texto, setTexto] = useState(valorInicial);
+  const listo = texto.trim().length > 0;
+
+  return (
+    <div className="brand-pop-in mt-4 rounded-2xl border border-[var(--brand-orange)]/30 bg-[var(--brand-orange)]/[0.06] p-4">
+      <label htmlFor="detalle-otro" className="text-sm font-medium text-white/80">
+        {COPY.quiz.ayudaOtro}
+      </label>
+      <textarea
+        id="detalle-otro"
+        autoFocus
+        rows={3}
+        value={texto}
+        maxLength={MAX}
+        onChange={(e) => setTexto(e.target.value)}
+        placeholder={COPY.quiz.placeholderOtro}
+        className="mt-2 w-full resize-none rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-base text-white placeholder:text-white/30 focus:border-[var(--brand-orange)]/60 focus:outline-none focus:ring-2 focus:ring-[var(--brand-orange)]/25 transition"
+      />
+      <div className="mt-1 flex items-center justify-between">
+        <span className="text-[11px] text-white/35">
+          {texto.length}/{MAX}
+        </span>
+      </div>
+      <button
+        type="button"
+        disabled={!listo}
+        onClick={() => onContinuar(texto.trim())}
+        className="brand-btn-cta font-display mt-3 w-full rounded-2xl px-6 py-3.5 text-white font-bold disabled:opacity-40 disabled:cursor-not-allowed"
+      >
+        {COPY.quiz.botonContinuar}
+      </button>
+    </div>
+  );
+}
+
+/**
+ * Pregunta abierta de investigación. Opcional por diseño: el botón de
+ * saltar es igual de visible que el de continuar, para no perder a nadie
+ * en la última pantalla antes del resultado.
+ */
+function PantallaAbierta({
+  pregunta,
+  valorInicial,
+  onContinuar,
+}: {
+  pregunta: PreguntaAbierta;
+  valorInicial: string;
+  onContinuar: (texto: string) => void;
+}) {
+  const [texto, setTexto] = useState(valorInicial);
+
+  return (
+    <div>
+      <p className="-mt-3 mb-4 text-sm text-[var(--brand-text-muted)]">
+        {pregunta.ayuda}
+      </p>
+      <textarea
+        rows={5}
+        value={texto}
+        maxLength={pregunta.maxLargo}
+        onChange={(e) => setTexto(e.target.value)}
+        placeholder={pregunta.placeholder}
+        className="w-full resize-none rounded-2xl border border-white/10 bg-white/5 px-4 py-3.5 text-base text-white placeholder:text-white/30 focus:border-[var(--brand-orange)]/60 focus:outline-none focus:ring-2 focus:ring-[var(--brand-orange)]/25 transition"
+      />
+      <p className="mt-1 text-right text-[11px] text-white/35">
+        {texto.length}/{pregunta.maxLargo}
+      </p>
+
+      <button
+        type="button"
+        onClick={() => onContinuar(texto.trim())}
+        className="brand-btn-cta font-display mt-4 w-full rounded-2xl px-6 py-4 text-white font-bold"
+      >
+        {COPY.quiz.botonVerResultado}
+      </button>
+      <button
+        type="button"
+        onClick={() => onContinuar("")}
+        className="mt-3 w-full rounded-2xl border border-white/10 bg-white/5 px-6 py-3.5 text-sm font-medium text-white/60 hover:border-white/25 hover:text-white/85 transition"
+      >
+        {COPY.quiz.botonSaltar}
+      </button>
+    </div>
   );
 }
 

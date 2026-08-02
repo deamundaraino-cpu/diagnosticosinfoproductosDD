@@ -56,10 +56,32 @@ const ETIQUETA_ESTADO: Record<EstadoEfectivo, { texto: string; clase: string }> 
 interface FilaResumen {
   ruta: Ruta;
   fase: FaseId;
+  /** resumen_fases separa por escala: la v2 cambió el rango del score. */
+  version_cuestionario?: number;
   total: number;
   con_email: number;
   score_promedio: number;
 }
+
+/** Etiquetas legibles de las respuestas no puntuadas. */
+const TEXTO_CUELLO: Record<string, string> = {
+  leads: "No llega gente",
+  conversion: "No compra",
+  ticket_medio: "Poco por cliente",
+  previsibilidad: "Ingresos irregulares",
+  operacion: "Sin tiempo",
+  otro: "Otra cosa",
+  // Retirados del formulario en la v2, pero hay histórico con ellos.
+  retencion: "Retención",
+  tiempo: "Tiempo",
+};
+
+const TEXTO_INTENCION: Record<string, string> = {
+  nada: "Nada todavía",
+  contenido_gratis: "Contenido gratis",
+  compro_producto: "Compró un curso",
+  contrato_servicio: "Contrató a alguien",
+};
 
 interface FilaEmbudo {
   ruta: Ruta;
@@ -82,7 +104,15 @@ interface FilaDiagnostico {
   estado_efectivo: EstadoEfectivo;
   preguntas_respondidas: number;
   total_preguntas: number | null;
+  facturacion: string | null;
+  cuello_de_botella: string | null;
+  cuello_botella_otro: string | null;
+  nivel_intencion: string | null;
+  texto_abierto: string | null;
 }
+
+const COLUMNAS_TABLA =
+  "id, nombre, email, fecha_creacion, ruta, fase, score_numerico, estado_efectivo, preguntas_respondidas, total_preguntas, facturacion, cuello_de_botella, cuello_botella_otro, nivel_intencion, texto_abierto";
 
 export default async function PanelAdmin({
   searchParams,
@@ -125,10 +155,7 @@ export default async function PanelAdmin({
 
     let consulta = supabase
       .from("diagnosticos_embudo")
-      .select(
-        "id, nombre, email, fecha_creacion, ruta, fase, score_numerico, estado_efectivo, preguntas_respondidas, total_preguntas",
-        { count: "exact" }
-      )
+      .select(COLUMNAS_TABLA, { count: "exact" })
       .order("fecha_creacion", { ascending: false })
       .range((pagina - 1) * POR_PAGINA, pagina * POR_PAGINA - 1);
 
@@ -243,8 +270,12 @@ export default async function PanelAdmin({
           Fases
         </span>
         {FASES.map((fase) => {
-          const fila = resumen.find((r) => r.fase === fase);
-          const cantidad = fila ? Number(fila.total) : 0;
+          // Se suma entre versiones del cuestionario: resumen_fases las
+          // separa porque el score no es comparable entre escalas, pero
+          // el conteo de personas por fase sí.
+          const cantidad = resumen
+            .filter((r) => r.fase === fase)
+            .reduce((s, r) => s + Number(r.total), 0);
           return (
             <span
               key={fase}
@@ -288,6 +319,14 @@ export default async function PanelAdmin({
             {e.texto}
           </Filtro>
         ))}
+
+        {/* El análisis de los textos abiertos se hace fuera de la plataforma */}
+        <a
+          href={filtroRuta ? `/admin/exportar?ruta=${filtroRuta}` : "/admin/exportar"}
+          className="ml-auto rounded-full border border-[var(--brand-orange)]/40 bg-[var(--brand-orange)]/10 px-3.5 py-1 text-[var(--brand-orange-light)] hover:bg-[var(--brand-orange)]/20 transition"
+        >
+          ↓ Exportar CSV
+        </a>
       </div>
 
       {/* Tabla */}
@@ -302,11 +341,15 @@ export default async function PanelAdmin({
               <th className="px-4 py-3">Avance</th>
               <th className="px-4 py-3">Fase</th>
               <th className="px-4 py-3 text-right">Score</th>
+              <th className="px-4 py-3">Facturación</th>
+              <th className="px-4 py-3">Cuello de botella</th>
+              <th className="px-4 py-3">Ya intentó</th>
+              <th className="px-4 py-3">Nos escribió</th>
             </tr>
           </thead>
           <tbody>
             {filas.length === 0 && (
-              <TablaVacia columnas={7} texto="Sin diagnósticos todavía." />
+              <TablaVacia columnas={11} texto="Sin diagnósticos todavía." />
             )}
             {filas.map((fila) => {
               const etiqueta = ETIQUETA_ESTADO[fila.estado_efectivo];
@@ -347,6 +390,42 @@ export default async function PanelAdmin({
                   </td>
                   <td className="px-4 py-3 text-right font-mono text-white/85">
                     {fila.score_numerico ?? "—"}
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap text-white/60">
+                    {fila.facturacion ?? <span className="text-white/25">—</span>}
+                  </td>
+                  <td className="px-4 py-3 text-white/70">
+                    {fila.cuello_de_botella ? (
+                      <span title={fila.cuello_botella_otro ?? undefined}>
+                        {TEXTO_CUELLO[fila.cuello_de_botella] ?? fila.cuello_de_botella}
+                        {fila.cuello_botella_otro && (
+                          <span className="block text-[11px] text-white/40 max-w-[16rem] truncate">
+                            {fila.cuello_botella_otro}
+                          </span>
+                        )}
+                      </span>
+                    ) : (
+                      <span className="text-white/25">—</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap text-white/60">
+                    {fila.nivel_intencion ? (
+                      TEXTO_INTENCION[fila.nivel_intencion] ?? fila.nivel_intencion
+                    ) : (
+                      <span className="text-white/25">—</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-white/70">
+                    {fila.texto_abierto ? (
+                      <span
+                        title={fila.texto_abierto}
+                        className="block max-w-[18rem] truncate"
+                      >
+                        {fila.texto_abierto}
+                      </span>
+                    ) : (
+                      <span className="text-white/25">—</span>
+                    )}
                   </td>
                 </tr>
               );

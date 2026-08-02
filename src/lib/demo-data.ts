@@ -38,6 +38,11 @@ export interface DiagnosticoDemo {
   ultima_pregunta_id: string | null;
   ultima_actividad_at: string;
   respuestas: RespuestaDetallada[];
+  facturacion: string | null;
+  cuello_de_botella: string | null;
+  cuello_botella_otro: string | null;
+  nivel_intencion: string | null;
+  texto_abierto: string | null;
   utm_source: string | null;
   utm_medium: string | null;
   utm_campaign: string | null;
@@ -79,16 +84,17 @@ export interface ResumenUtmDemo {
   capturados: number;
 }
 
+/** Escala del cuestionario v2: ruta A 9-27, ruta B 5-15. */
 const RANGOS: Record<Ruta, [FaseId, number, number][]> = {
   A: [
-    ["A1", 8, 13],
-    ["A2", 14, 19],
-    ["A3", 20, 24],
+    ["A1", 9, 15],
+    ["A2", 16, 21],
+    ["A3", 22, 27],
   ],
   B: [
     ["B1", 5, 8],
     ["B2", 9, 12],
-    ["B3", 13, 14],
+    ["B3", 13, 15],
   ],
 };
 
@@ -96,6 +102,14 @@ const NOMBRES = [
   "Ana", "Luis", "Marta", "Jorge", "Sofía", "Pedro", "Lucía", "Andrés",
   "Camila", "Diego", "Valentina", "Felipe", "Daniela", "Santiago", "Carolina",
   "Mateo", "Isabella", "Julián", "Paula", "Nicolás",
+];
+
+const TEXTOS_ABIERTOS = [
+  "Creo que me falta constancia con el contenido, publico a rachas.",
+  "No sé si mi oferta está mal o si el problema es el tráfico.",
+  "Hago de todo yo solo y no me alcanza el día.",
+  "Vendo el producto de entrada pero nadie sube al siguiente.",
+  "Me da miedo subir el precio y quedarme sin ventas.",
 ];
 
 const ORIGENES: Array<[string, string, string, string]> = [
@@ -126,17 +140,34 @@ function respuestasHasta(
 ): RespuestaDetallada[] {
   return preguntasDeRuta(ruta)
     .slice(0, cuantas)
-    .map((pregunta): RespuestaDetallada => {
-      const indice = Math.floor(azar() * pregunta.opciones.length);
+    .flatMap((pregunta): RespuestaDetallada[] => {
       const base = { preguntaId: pregunta.id, pregunta: pregunta.texto };
+
+      // La pregunta abierta es opcional: en el dataset demo la responde
+      // aproximadamente una de cada tres personas.
+      if (pregunta.tipo === "abierta") {
+        if (azar() > 0.35) return [];
+        return [
+          {
+            ...base,
+            opcionId: "texto_libre",
+            opcion: TEXTOS_ABIERTOS[Math.floor(azar() * TEXTOS_ABIERTOS.length)],
+            puntos: null,
+          },
+        ];
+      }
+
+      const indice = Math.floor(azar() * pregunta.opciones.length);
 
       if (pregunta.tipo === "puntuada") {
         const opcion = pregunta.opciones[indice];
-        return { ...base, opcionId: opcion.id, opcion: opcion.texto, puntos: opcion.puntos };
+        return [
+          { ...base, opcionId: opcion.id, opcion: opcion.texto, puntos: opcion.puntos },
+        ];
       }
 
       const opcion = pregunta.opciones[indice];
-      return { ...base, opcionId: opcion.id, opcion: opcion.texto, puntos: null };
+      return [{ ...base, opcionId: opcion.id, opcion: opcion.texto, puntos: null }];
     });
 }
 
@@ -183,6 +214,10 @@ function generarDataset(): DiagnosticoDemo[] {
     const opciones = RANGOS[ruta];
     const [fase, min, max] = opciones[Math.floor(azar() * opciones.length)];
 
+    const busca = (id: string) => respuestas.find((r) => r.preguntaId === id);
+    const cuello = busca("a10");
+    const abierta = busca(ruta === "A" ? "a12" : "b6");
+
     filas.push({
       id: `demo-fila-${i}`,
       nombre: estado === "capturado" ? nombre : null,
@@ -193,11 +228,19 @@ function generarDataset(): DiagnosticoDemo[] {
       score_numerico: completo ? min + Math.floor(azar() * (max - min + 1)) : null,
       estado,
       estado_efectivo: estadoEfectivo,
-      preguntas_respondidas: respondidas,
+      // La abierta es opcional, así que puede haber menos respuestas
+      // guardadas que pantallas recorridas.
+      preguntas_respondidas: respuestas.length,
       total_preguntas: totalPreguntas,
       ultima_pregunta_id: respuestas.at(-1)?.preguntaId ?? null,
       ultima_actividad_at: fecha,
       respuestas,
+      facturacion: busca("a1")?.opcion ?? null,
+      cuello_de_botella: cuello?.opcionId ?? null,
+      cuello_botella_otro:
+        cuello?.opcionId === "otro" ? "Tengo el equipo desalineado" : null,
+      nivel_intencion: busca("a11")?.opcionId ?? null,
+      texto_abierto: abierta?.opcion ?? null,
       utm_source: utmSource,
       utm_medium: utmMedium,
       utm_campaign: utmCampaign,

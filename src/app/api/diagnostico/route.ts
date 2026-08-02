@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { calcularResultado, RespuestasInvalidasError } from "@/lib/scoring";
+import { preguntasDeRuta, VERSION_CUESTIONARIO } from "@/content/preguntas";
 import { generarToken } from "@/lib/token";
 import { getSupabase } from "@/lib/supabase";
 import { enviarEventoCapi } from "@/lib/meta-capi";
@@ -13,7 +14,11 @@ const bodySchema = z.object({
   // basura de gran tamaño.
   respuestas: z
     .record(z.string().max(30), z.string().max(60))
-    .refine((r) => Object.keys(r).length <= 12, "demasiadas respuestas"),
+    .refine((r) => Object.keys(r).length <= 14, "demasiadas respuestas"),
+  textos: z
+    .record(z.string().max(30), z.string().max(600))
+    .refine((t) => Object.keys(t).length <= 4, "demasiados textos")
+    .optional(),
   /** Sesión creada al responder la primera pregunta (guardado progresivo). */
   sesionId: z.string().max(100).nullish(),
   idBase: z.string().min(8).max(100),
@@ -68,7 +73,7 @@ export async function POST(request: Request) {
 
   let resultado;
   try {
-    resultado = calcularResultado(body.ruta, body.respuestas);
+    resultado = calcularResultado(body.ruta, body.respuestas, body.textos ?? {});
   } catch (err) {
     if (err instanceof RespuestasInvalidasError) {
       return NextResponse.json({ error: "Respuestas incompletas" }, { status: 400 });
@@ -89,16 +94,28 @@ export async function POST(request: Request) {
   }
 
   const ahora = new Date().toISOString();
+  const totalPreguntas = preguntasDeRuta(resultado.ruta).length;
+
+  // Q1 de la ruta A, desnormalizada para poder filtrarla y exportarla
+  // sin abrir el JSON de respuestas en cada consulta.
+  const facturacion =
+    resultado.detalle.find((d) => d.preguntaId === "a1")?.opcion ?? null;
+
   const camposResultado = {
     estado: "completado",
     fase: resultado.fase,
     score_numerico: resultado.score,
     respuestas: resultado.detalle,
-    preguntas_respondidas: resultado.detalle.length,
-    total_preguntas: resultado.detalle.length,
+    preguntas_respondidas: totalPreguntas,
+    total_preguntas: totalPreguntas,
     ultima_pregunta_id: resultado.detalle.at(-1)?.preguntaId ?? null,
     cuello_de_botella: resultado.ruta === "A" ? resultado.tag : null,
     freno_principal: resultado.ruta === "B" ? resultado.tag : null,
+    cuello_botella_otro: resultado.cuelloDeBotellaOtro,
+    nivel_intencion: resultado.nivelIntencion,
+    texto_abierto: resultado.textoAbierto,
+    facturacion,
+    version_cuestionario: VERSION_CUESTIONARIO,
     completado_at: ahora,
     ultima_actividad_at: ahora,
   };
@@ -173,6 +190,7 @@ export async function POST(request: Request) {
       fase: resultado.fase,
       score: resultado.score,
       cuello_de_botella: resultado.tag,
+      nivel_intencion: resultado.nivelIntencion,
       utm_source: body.utm?.source,
       utm_campaign: body.utm?.campaign,
       utm_content: body.utm?.content,

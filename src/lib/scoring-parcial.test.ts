@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { detallarParcial, faseEstimada, faseEstimadaDeDetalle } from "./scoring";
 import { PREGUNTAS_A, PREGUNTAS_B } from "@/content/preguntas";
+import type { Pregunta } from "@/content/tipos";
 import type { Respuestas } from "./scoring";
 
 /**
@@ -9,13 +10,10 @@ import type { Respuestas } from "./scoring";
  */
 
 /** Responde las primeras `cuantas` preguntas eligiendo la opción `indice`. */
-function primeras(
-  preguntas: typeof PREGUNTAS_A,
-  cuantas: number,
-  indice: number
-): Respuestas {
+function primeras(preguntas: Pregunta[], cuantas: number, indice: number): Respuestas {
   const respuestas: Respuestas = {};
   for (const p of preguntas.slice(0, cuantas)) {
+    if (p.tipo === "abierta") continue;
     respuestas[p.id] = p.opciones[Math.min(indice, p.opciones.length - 1)].id;
   }
   return respuestas;
@@ -25,7 +23,7 @@ describe("detallarParcial", () => {
   it("no lanza cuando faltan respuestas (a diferencia de calcularResultado)", () => {
     const parcial = detallarParcial("A", primeras(PREGUNTAS_A, 3, 0));
     expect(parcial.preguntasRespondidas).toBe(3);
-    expect(parcial.totalPreguntas).toBe(9);
+    expect(parcial.totalPreguntas).toBe(12);
     expect(parcial.scoreParcial).toBe(3); // 3 preguntas × 1 punto
   });
 
@@ -48,17 +46,44 @@ describe("detallarParcial", () => {
     expect(parcial.detalle.map((d) => d.preguntaId)).toEqual(["a1"]);
   });
 
-  it("la pregunta tag no suma al score pero sí queda registrada", () => {
-    const parcial = detallarParcial("A", { ...primeras(PREGUNTAS_A, 8, 0), a9: "tiempo" });
-    expect(parcial.scoreParcial).toBe(8);
-    expect(parcial.tag).toBe("tiempo");
+  it("la pregunta de cuello de botella no suma pero sí queda registrada", () => {
+    const parcial = detallarParcial("A", {
+      ...primeras(PREGUNTAS_A, 9, 0),
+      a10: "operacion",
+    });
+    expect(parcial.scoreParcial).toBe(9);
+    expect(parcial.tag).toBe("operacion");
     expect(parcial.detalle.at(-1)?.puntos).toBeNull();
   });
 
-  it("ruta B: reconoce su propia pregunta tag", () => {
-    const parcial = detallarParcial("B", { b1: "b1_3", b4: "miedo" });
-    expect(parcial.tag).toBe("miedo");
+  it('adjunta el detalle de "Otra cosa" a la respuesta guardada', () => {
+    const parcial = detallarParcial(
+      "A",
+      { a1: "a1_1", a10: "otro" },
+      { a10: "Se me fue el equipo" }
+    );
+    expect(parcial.tag).toBe("otro");
+    expect(parcial.detalle.at(-1)?.opcion).toContain("Se me fue el equipo");
+  });
+
+  it("ruta B ya no tiene pregunta de etiqueta en la v2", () => {
+    const parcial = detallarParcial("B", { b1: "b1_3", b2: "b2_2" });
+    expect(parcial.tag).toBeNull();
     expect(parcial.totalPreguntas).toBe(6);
+  });
+
+  it("guarda el texto abierto cuando ya se escribió, en ambas rutas", () => {
+    const a = detallarParcial("A", { a1: "a1_1" }, { a12: "Me falta sistema" });
+    expect(a.detalle.at(-1)?.opcion).toBe("Me falta sistema");
+    expect(a.detalle.at(-1)?.puntos).toBeNull();
+
+    const b = detallarParcial("B", { b1: "b1_1" }, { b6: "Me da miedo" });
+    expect(b.detalle.at(-1)?.opcion).toBe("Me da miedo");
+  });
+
+  it("un texto abierto en blanco no genera respuesta guardada", () => {
+    const parcial = detallarParcial("A", { a1: "a1_1" }, { a12: "   " });
+    expect(parcial.preguntasRespondidas).toBe(1);
   });
 
   it("sin ninguna respuesta válida devuelve cero", () => {
@@ -86,10 +111,22 @@ describe("faseEstimada (perfil de quien abandonó)", () => {
   it("la estimación cae siempre dentro de las fases de su ruta", () => {
     for (let cuantas = 2; cuantas <= 5; cuantas++) {
       for (const indice of [0, 1, 2]) {
-        const fase = faseEstimada(detallarParcial("B", primeras(PREGUNTAS_B, cuantas, indice)));
+        const fase = faseEstimada(
+          detallarParcial("B", primeras(PREGUNTAS_B, cuantas, indice))
+        );
         if (fase) expect(fase.startsWith("B")).toBe(true);
       }
     }
+  });
+
+  it("las etiquetas y el texto abierto no distorsionan la estimación", () => {
+    const soloPuntuadas = detallarParcial("A", primeras(PREGUNTAS_A, 9, 1));
+    const conEtiquetas = detallarParcial(
+      "A",
+      { ...primeras(PREGUNTAS_A, 9, 1), a10: "leads", a11: "nada" },
+      { a12: "algo que escribí" }
+    );
+    expect(faseEstimada(conEtiquetas)).toBe(faseEstimada(soloPuntuadas));
   });
 
   it("faseEstimadaDeDetalle parte del detalle guardado y da el mismo resultado", () => {

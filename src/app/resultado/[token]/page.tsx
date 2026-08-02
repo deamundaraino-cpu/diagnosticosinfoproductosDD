@@ -1,8 +1,13 @@
 import { notFound } from "next/navigation";
 import type { Viewport } from "next";
 import { getSupabase } from "@/lib/supabase";
-import { ctaEfectivo, ROADMAPS } from "@/content/roadmaps";
+import {
+  ctaEfectivo,
+  recomendacionProductoActiva,
+  ROADMAPS,
+} from "@/content/roadmaps";
 import { COPY } from "@/content/copy";
+import { urlAgendamiento } from "@/lib/agenda";
 import type { FaseId } from "@/content/tipos";
 import { BadgePlaceholder } from "@/components/BadgePlaceholder";
 import { TrackerResultado } from "@/components/TrackerResultado";
@@ -19,6 +24,8 @@ const FASES: FaseId[] = ["A1", "A2", "A3", "B1", "B2", "B3"];
 interface DatosResultado {
   fase: FaseId;
   tag: string | null;
+  /** Identificador que viaja al agendamiento para cruzar llamada ↔ respuestas. */
+  identificador: string;
 }
 
 async function datosDeToken(token: string): Promise<DatosResultado | null> {
@@ -29,19 +36,25 @@ async function datosDeToken(token: string): Promise<DatosResultado | null> {
   if (token.startsWith("demo-")) {
     if (supabase) return null;
     const fase = token.split("-")[1] as FaseId;
-    return FASES.includes(fase) ? { fase, tag: null } : null;
+    return FASES.includes(fase)
+      ? { fase, tag: null, identificador: token }
+      : null;
   }
 
   if (!supabase) return null;
 
   const { data } = await supabase
     .from("diagnosticos")
-    .select("fase, cuello_de_botella")
+    .select("id, fase, cuello_de_botella")
     .eq("token_resultado", token)
     .maybeSingle();
 
   if (!data || !FASES.includes(data.fase as FaseId)) return null;
-  return { fase: data.fase as FaseId, tag: data.cuello_de_botella as string | null };
+  return {
+    fase: data.fase as FaseId,
+    tag: data.cuello_de_botella as string | null,
+    identificador: data.id as string,
+  };
 }
 
 export default async function PaginaResultado({
@@ -52,10 +65,12 @@ export default async function PaginaResultado({
   const { token } = await params;
   const datos = await datosDeToken(token);
   if (!datos) notFound();
-  const { fase, tag } = datos;
+  const { fase, tag, identificador } = datos;
 
   const roadmap = ROADMAPS[fase];
   const esDemo = token.startsWith("demo-");
+  const vendiendo = recomendacionProductoActiva();
+  const urlAgenda = urlAgendamiento(identificador);
 
   return (
     <BrandBackdrop
@@ -128,18 +143,52 @@ export default async function PaginaResultado({
             style={{ background: "radial-gradient(circle at 50% 0%, rgba(235,78,39,0.22), transparent 65%)" }}
           />
           <div className="relative z-10">
-            <h2 className="font-display text-xl font-bold">{COPY.resultado.ctaTitulo}</h2>
-            <p className="mt-2 text-sm text-white/70 leading-relaxed max-w-sm mx-auto">
-              {ctaEfectivo(roadmap, tag)}
-            </p>
-            <a
-              href={COPY.marca.instagramUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="brand-btn-cta font-display mt-5 inline-block rounded-2xl px-7 py-3.5 text-white font-bold"
-            >
-              {COPY.resultado.ctaBoton}
-            </a>
+            {vendiendo ? (
+              <>
+                <h2 className="font-display text-xl font-bold">
+                  {COPY.resultado.ctaTitulo}
+                </h2>
+                <p className="mt-2 text-sm text-white/70 leading-relaxed max-w-sm mx-auto">
+                  {ctaEfectivo(roadmap, tag)}
+                </p>
+                <a
+                  href={COPY.marca.instagramUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="brand-btn-cta font-display mt-5 inline-block rounded-2xl px-7 py-3.5 text-white font-bold"
+                >
+                  {COPY.resultado.ctaBoton}
+                </a>
+              </>
+            ) : (
+              <>
+                <h2 className="font-display text-xl font-bold">
+                  {COPY.llamada.titulo}
+                </h2>
+                <p className="mt-3 text-sm text-white/70 leading-relaxed max-w-md mx-auto">
+                  {COPY.llamada.cuerpo}
+                </p>
+                {urlAgenda ? (
+                  <a
+                    href={urlAgenda}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="brand-btn-cta font-display mt-6 inline-block rounded-2xl px-7 py-4 text-white font-bold"
+                  >
+                    {COPY.llamada.boton}
+                  </a>
+                ) : (
+                  <a
+                    href={COPY.marca.instagramUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="brand-btn-cta font-display mt-6 inline-block rounded-2xl px-7 py-4 text-white font-bold"
+                  >
+                    {COPY.llamada.sinAgenda}
+                  </a>
+                )}
+              </>
+            )}
           </div>
         </div>
       </div>

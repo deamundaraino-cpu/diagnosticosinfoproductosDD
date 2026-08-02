@@ -30,6 +30,12 @@ export const COPY = {
       `Pregunta ${actual} de ${total}`,
     botonSiguiente: "Siguiente",
     botonVerResultado: "Ver mi resultado",
+    botonContinuar: "Continuar",
+    // La pregunta abierta es de investigación: nunca puede bloquear a
+    // nadie, por eso saltarla es una opción visible y explícita.
+    botonSaltar: "Saltar esta pregunta",
+    placeholderOtro: "Cuéntame en una línea qué te tiene frenado…",
+    ayudaOtro: "Escríbelo con tus palabras para poder seguir.",
     calculando: "Analizando tus respuestas…",
     // Pantalla de análisis entre el quiz y el resultado: simula el trabajo
     // de revisar el caso antes de entregar el diagnóstico, en vez de una
@@ -71,6 +77,23 @@ export const COPY = {
       "📩 Te enviamos este roadmap a tu correo para que vuelvas a él cuando quieras.",
     ctaTitulo: "¿Quieres el paso a paso completo?",
     ctaBoton: "Seguir a @daviddigital.co",
+  },
+
+  /**
+   * Bloque final durante la fase de investigación de mercado. Sustituye a
+   * la recomendación de producto (ver recomendacionProductoActiva()).
+   *
+   * El encuadre es investigación, no regalo: por eso no aparecen las
+   * palabras "gratis", "asesoría" ni "consultoría". Hay un test que falla
+   * el build si alguna se cuela.
+   */
+  llamada: {
+    titulo: "¿Quieres que revisemos tu caso en concreto?",
+    cuerpo:
+      "Estoy hablando con infoproductores para entender cómo trabajan de verdad. Son 30 minutos, es una conversación de investigación, no una llamada de ventas: no tengo nada que ofrecerte ahora mismo.",
+    boton: "Agendar los 30 minutos",
+    // Se muestra si todavía no hay URL de agendamiento configurada.
+    sinAgenda: "Escríbeme por Instagram y coordinamos.",
   },
 
   email: {

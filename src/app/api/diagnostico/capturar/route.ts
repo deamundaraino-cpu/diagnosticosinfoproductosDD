@@ -135,6 +135,9 @@ export async function POST(request: Request) {
       fase: data.fase as FaseId,
       token: data.token_resultado,
       tag: data.cuello_de_botella as string | null,
+      // Viaja al enlace de agendamiento para poder cruzar la llamada
+      // con las respuestas de esta persona.
+      identificador: body.id,
     }),
     sincronizarLeadConEsp({
       email: body.email,

@@ -55,6 +55,8 @@ let cadena: Promise<unknown> = Promise.resolve();
 export interface ProgresoQuiz {
   ruta: Ruta;
   respuestas: Record<string, string>;
+  /** Texto libre: pregunta abierta y detalle de "Otra cosa". */
+  textos: Record<string, string>;
   ultimaPregunta: string;
 }
 
@@ -77,6 +79,7 @@ export function registrarProgreso(progreso: ProgresoQuiz): Promise<void> {
           sesionId,
           ruta: progreso.ruta,
           respuestas: progreso.respuestas,
+          textos: progreso.textos,
           ultimaPregunta: progreso.ultimaPregunta,
           idBase: idBaseDeSesion(),
           // La atribución solo hace falta al crear la fila.

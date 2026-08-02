@@ -11,6 +11,11 @@ export interface OpcionPuntuada {
 export interface OpcionTag {
   id: string;
   texto: string;
+  /**
+   * Al elegirla se despliega un campo de texto obligatorio en la misma
+   * pantalla (caso "Otra cosa"). El detalle se guarda aparte del tag.
+   */
+  requiereDetalle?: boolean;
 }
 
 export interface PreguntaPuntuada {
@@ -20,17 +25,55 @@ export interface PreguntaPuntuada {
   opciones: OpcionPuntuada[];
 }
 
+/** Campo de la base donde aterriza la respuesta de una pregunta no puntuada. */
+export type CampoTag = "cuello_de_botella" | "nivel_intencion";
+
 export interface PreguntaTag {
   id: string;
   tipo: "tag";
   texto: string;
+  campo: CampoTag;
   opciones: OpcionTag[];
 }
 
-export type Pregunta = PreguntaPuntuada | PreguntaTag;
+/**
+ * Pregunta de investigación: texto libre, siempre opcional y siempre la
+ * última de su ruta. No puntúa y no puede bloquear el avance al resultado.
+ */
+export interface PreguntaAbierta {
+  id: string;
+  tipo: "abierta";
+  texto: string;
+  ayuda: string;
+  placeholder: string;
+  maxLargo: number;
+}
 
-/** Tags de cuello de botella de Ruta A (pregunta 9) — usados para ofertas condicionales. */
-export type TagCuelloDeBotella = "leads" | "conversion" | "retencion" | "tiempo";
+export type Pregunta = PreguntaPuntuada | PreguntaTag | PreguntaAbierta;
+
+/**
+ * Cuello de botella de Ruta A.
+ *
+ * `retencion` y `tiempo` se retiraron del formulario en la v2 del
+ * cuestionario, pero siguen declarados: hay registros históricos que los
+ * tienen guardados y el panel debe poder mostrarlos sin romperse.
+ */
+export type TagCuelloDeBotella =
+  | "leads"
+  | "conversion"
+  | "ticket_medio"
+  | "previsibilidad"
+  | "operacion"
+  | "otro"
+  | "retencion"
+  | "tiempo";
+
+/** Qué ha intentado ya la persona para resolver su cuello de botella. */
+export type NivelIntencion =
+  | "nada"
+  | "contenido_gratis"
+  | "compro_producto"
+  | "contrato_servicio";
 
 export interface Roadmap {
   fase: FaseId;

@@ -7,13 +7,14 @@ import {
   utmDemo,
 } from "./demo-data";
 
+/** Escala del cuestionario v2: ruta A 9-27, ruta B 5-15. */
 const RANGO_FASE: Record<string, [number, number]> = {
-  A1: [8, 13],
-  A2: [14, 19],
-  A3: [20, 24],
+  A1: [9, 15],
+  A2: [16, 21],
+  A3: [22, 27],
   B1: [5, 8],
   B2: [9, 12],
-  B3: [13, 14],
+  B3: [13, 15],
 };
 
 describe("dataset demo del panel /admin", () => {
@@ -30,9 +31,11 @@ describe("dataset demo del panel /admin", () => {
 
   it("solo hay fase y score cuando el quiz se terminó", () => {
     for (const fila of DIAGNOSTICOS_DEMO) {
-      const completo = fila.preguntas_respondidas === fila.total_preguntas;
-      expect(Boolean(fila.fase)).toBe(completo);
-      expect(fila.score_numerico === null).toBe(!completo);
+      // Se mira el estado, no el conteo: la pregunta abierta es opcional,
+      // así que se puede terminar el quiz con menos respuestas que pantallas.
+      const termino = fila.estado !== "iniciado";
+      expect(Boolean(fila.fase)).toBe(termino);
+      expect(fila.score_numerico === null).toBe(!termino);
     }
   });
 
