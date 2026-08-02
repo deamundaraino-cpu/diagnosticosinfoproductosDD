@@ -10,14 +10,21 @@ import {
 import { ROADMAPS } from "@/content/roadmaps";
 import { COPY } from "@/content/copy";
 import type { FaseId, Ruta } from "@/content/tipos";
-import { leerUtm } from "@/lib/utm";
+import { leerUtm, leerCookiesMeta } from "@/lib/utm";
 import { trackEvento } from "@/lib/analytics";
+import { trackPixel } from "@/lib/meta-pixel";
+import {
+  idBaseDeSesion,
+  progresoPendiente,
+  registrarProgreso,
+  sesionIdGuardado,
+} from "@/lib/sesion-diagnostico";
 import { BadgePlaceholder } from "@/components/BadgePlaceholder";
 import { BrandBackdrop } from "@/components/brand/BrandBackdrop";
 
 type Etapa = "bifurcacion" | "preguntas" | "calculando" | "gate";
 
-interface ResultadoParcial {
+interface ResultadoQuiz {
   id: string;
   fase: FaseId;
   score: number;
@@ -44,7 +51,7 @@ export function Quiz() {
   const [ruta, setRuta] = useState<Ruta | null>(null);
   const [indice, setIndice] = useState(0);
   const [respuestas, setRespuestas] = useState<Record<string, string>>({});
-  const [resultado, setResultado] = useState<ResultadoParcial | null>(null);
+  const [resultado, setResultado] = useState<ResultadoQuiz | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pasoAnalisis, setPasoAnalisis] = useState(0);
 
@@ -70,6 +77,7 @@ export function Quiz() {
   }
 
   async function responder(preguntaId: string, opcionId: string) {
+    const esPrimera = Object.keys(respuestas).length === 0;
     const nuevas = { ...respuestas, [preguntaId]: opcionId };
     setRespuestas(nuevas);
     trackEvento("pregunta_respondida", {
@@ -77,6 +85,15 @@ export function Quiz() {
       pregunta: preguntaId,
       opcion: opcionId,
     });
+
+    // Guardado progresivo: la fila nace aquí, en la primera respuesta.
+    // Sin await — la persona nunca espera a la medición.
+    if (ruta) {
+      registrarProgreso({ ruta, respuestas: nuevas, ultimaPregunta: preguntaId });
+      if (esPrimera) {
+        trackPixel("DiagnosticoIniciado", idBaseDeSesion(), { ruta });
+      }
+    }
 
     if (indice < preguntas.length - 1) {
       setIndice(indice + 1);
@@ -90,26 +107,36 @@ export function Quiz() {
     setError(null);
     const inicio = Date.now();
     try {
+      // La última respuesta se está guardando en paralelo; se espera a que
+      // termine para que el id de sesión ya exista y esta fila se complete
+      // en vez de duplicarse.
+      await progresoPendiente();
+
       const utm = leerUtm();
+      const idBase = idBaseDeSesion();
       const peticion = fetch("/api/diagnostico", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ruta,
           respuestas: todas,
+          sesionId: sesionIdGuardado(),
+          idBase,
           utm: utm
             ? {
                 source: utm.source,
                 medium: utm.medium,
                 campaign: utm.campaign,
                 content: utm.content,
+                term: utm.term,
               }
             : null,
           referrer: utm?.referrer ?? null,
+          meta: leerCookiesMeta(),
         }),
       }).then(async (res) => {
         if (!res.ok) throw new Error();
-        return (await res.json()) as ResultadoParcial;
+        return (await res.json()) as ResultadoQuiz;
       });
 
       const [data] = await Promise.all([
@@ -121,6 +148,11 @@ export function Quiz() {
       setEtapa("gate");
       trackEvento("quiz_completado", {
         ruta,
+        fase: data.fase,
+        score: data.score,
+      });
+      trackPixel("DiagnosticoCompletado", idBase, {
+        ruta: ruta ?? "",
         fase: data.fase,
         score: data.score,
       });
@@ -225,7 +257,7 @@ function GateResultado({
   resultado,
   onExito,
 }: {
-  resultado: ResultadoParcial;
+  resultado: ResultadoQuiz;
   onExito: (token: string) => void;
 }) {
   const roadmap = ROADMAPS[resultado.fase];
@@ -246,6 +278,7 @@ function GateResultado({
     }
     setEnviando(true);
     try {
+      const idBase = idBaseDeSesion();
       const res = await fetch("/api/diagnostico/capturar", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -255,6 +288,7 @@ function GateResultado({
           email,
           telefono: telefono || null,
           consentimiento,
+          idBase,
           website: honeypot || undefined,
         }),
       });
@@ -266,6 +300,8 @@ function GateResultado({
       if (!res.ok) throw new Error();
       const data = (await res.json()) as { token: string };
       trackEvento("email_capturado", { fase: resultado.fase });
+      // Evento estándar de Meta: el que optimizan las campañas.
+      trackPixel("Lead", idBase, { fase: resultado.fase, score: resultado.score });
       onExito(data.token);
     } catch {
       setError(COPY.errores.generico);

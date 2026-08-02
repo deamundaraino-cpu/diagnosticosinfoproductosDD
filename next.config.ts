@@ -4,13 +4,21 @@ import type { NextConfig } from "next";
 // hidratación de Next.js sin montar infraestructura de nonces; los dominios
 // de PostHog cubren la carga diferida de su recorder y la ingesta de
 // eventos. Si se agrega un servicio externo nuevo, añadir su dominio aquí.
+// En desarrollo React necesita eval() para reconstruir stacks y para el
+// refresco en caliente; en producción nunca lo usa, así que el permiso se
+// concede solo en dev y la CSP de producción queda igual de estricta.
+const esDesarrollo = process.env.NODE_ENV !== "production";
+const evalEnDev = esDesarrollo ? " 'unsafe-eval'" : "";
+
 const csp = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' https://*.posthog.com",
+  `script-src 'self' 'unsafe-inline'${evalEnDev} https://*.posthog.com https://connect.facebook.net`,
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob:",
+  // facebook.com en img-src: el pixel mide parte de los eventos con
+  // peticiones de imagen, no solo con fetch.
+  "img-src 'self' data: blob: https://www.facebook.com",
   "font-src 'self' data:",
-  "connect-src 'self' https://*.posthog.com",
+  "connect-src 'self' https://*.posthog.com https://www.facebook.com https://connect.facebook.net",
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'",

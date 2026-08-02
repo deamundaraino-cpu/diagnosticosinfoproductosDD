@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getSupabase } from "@/lib/supabase";
 import { enviarRoadmapPorEmail } from "@/lib/email";
 import { sincronizarLeadConEsp } from "@/lib/esp";
+import { enviarEventoCapi } from "@/lib/meta-capi";
 import { generarToken } from "@/lib/token";
 import { ipDePeticion, permitirPeticion } from "@/lib/ratelimit";
 import type { FaseId } from "@/content/tipos";
@@ -15,6 +16,8 @@ const bodySchema = z.object({
   email: z.email(),
   telefono: z.string().max(30).nullish(),
   consentimiento: z.literal(true),
+  /** Id base de la sesión, para deduplicar el Lead con el pixel. */
+  idBase: z.string().min(8).max(100),
   website: z.string().optional(), // honeypot
 });
 
@@ -81,9 +84,14 @@ export async function POST(request: Request) {
       consentimiento: true,
       consentimiento_at: ahora,
       email_capturado_at: ahora,
+      // Cierra el embudo: deja de contar como abandono.
+      estado: "capturado",
+      ultima_actividad_at: ahora,
     })
     .eq("id", body.id)
-    .select("token_resultado, ruta, fase, score_numerico, cuello_de_botella")
+    .select(
+      "token_resultado, ruta, fase, score_numerico, cuello_de_botella, fbp, fbc, client_ip, user_agent, utm_source, utm_campaign, utm_content"
+    )
     .single();
 
   if (error || !data) {
@@ -91,9 +99,36 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Diagnóstico no encontrado" }, { status: 404 });
   }
 
-  // Email y ESP son secundarios al flujo: si fallan, la persona igual ve su
-  // resultado en pantalla y el lead ya está en Supabase (queda log).
+  // Email, ESP y Meta son secundarios al flujo: si fallan, la persona igual
+  // ve su resultado en pantalla y el lead ya está en Supabase (queda log).
   await Promise.all([
+    // `Lead` es el evento estándar a optimizar en las campañas de Meta.
+    // Va con los datos de contacto hasheados, que es lo que sube la
+    // calidad de coincidencia y permite atribuirlo al anuncio exacto.
+    enviarEventoCapi({
+      evento: "Lead",
+      idBase: body.idBase,
+      persona: {
+        email: body.email,
+        telefono: body.telefono,
+        nombre: body.nombre,
+        fbp: data.fbp as string | null,
+        fbc: data.fbc as string | null,
+        ip: (data.client_ip as string | null) ?? ipDePeticion(request),
+        userAgent:
+          (data.user_agent as string | null) ?? request.headers.get("user-agent"),
+      },
+      propiedades: {
+        ruta: data.ruta as string,
+        fase: data.fase as string,
+        score: data.score_numerico as number,
+        cuello_de_botella: data.cuello_de_botella as string | null,
+        utm_source: data.utm_source as string | null,
+        utm_campaign: data.utm_campaign as string | null,
+        utm_content: data.utm_content as string | null,
+      },
+      urlOrigen: request.headers.get("referer"),
+    }),
     enviarRoadmapPorEmail({
       para: body.email,
       nombre: body.nombre,

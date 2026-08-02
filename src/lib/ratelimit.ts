@@ -51,6 +51,16 @@ export function permitirIntentoLogin(ip: string): boolean {
   return permitirPeticion(ip, { limite: 5, ventanaMs: 60_000, ambito: "login" });
 }
 
+/**
+ * Guardado progresivo del quiz: una petición por respuesta, hasta 9 en
+ * la ruta A. Con el límite general de 10/min una persona normal quedaría
+ * bloqueada a mitad del diagnóstico, así que va en su propio ámbito con
+ * margen para un quiz completo más reintentos.
+ */
+export function permitirSesion(ip: string): boolean {
+  return permitirPeticion(ip, { limite: 40, ventanaMs: 60_000, ambito: "sesion" });
+}
+
 export function ipDePeticion(request: Request): string {
   const forwarded = request.headers.get("x-forwarded-for");
   return forwarded?.split(",")[0]?.trim() || "desconocida";

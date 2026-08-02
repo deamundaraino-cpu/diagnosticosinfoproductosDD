@@ -16,7 +16,7 @@ export const viewport: Viewport = { themeColor: "#0D1420" };
  * del responsable y correo de contacto.
  */
 
-const FECHA_ACTUALIZACION = "19 de julio de 2026";
+const FECHA_ACTUALIZACION = "2 de agosto de 2026";
 const EMAIL_CONTACTO = "comunidad@daviddigital.co";
 
 export default function Privacidad() {
@@ -50,11 +50,17 @@ export default function Privacidad() {
                 decides dárnoslo — tu número de WhatsApp.
               </li>
               <li>
+                <strong>Respuestas parciales:</strong> tus respuestas se guardan
+                a medida que avanzas, así que si no terminas el diagnóstico
+                conservamos igualmente las que alcanzaste a responder. Sin tu
+                correo, esos registros no están asociados a tu identidad.
+              </li>
+              <li>
                 <strong>Datos de contexto de la visita:</strong> parámetros de
-                origen (UTM), página de referencia y eventos de uso de la
-                plataforma (por ejemplo, en qué pregunta abandonas el
-                cuestionario), recogidos mediante la herramienta de analítica
-                PostHog.
+                origen (UTM), identificadores de clic en anuncios (fbclid,
+                gclid, ttclid), página de referencia, dirección IP, tipo de
+                navegador y eventos de uso de la plataforma (por ejemplo, en qué
+                pregunta abandonas el cuestionario).
               </li>
             </ul>
             <p className="mt-2">
@@ -77,6 +83,12 @@ export default function Privacidad() {
               <li>
                 Analizar de forma agregada el uso de la plataforma para
                 mejorarla (estadísticas por fase, tasas de abandono).
+              </li>
+              <li>
+                <strong>Medir la eficacia de nuestra publicidad:</strong> saber
+                qué anuncio o publicación te trajo hasta aquí y si completaste
+                el diagnóstico, para no gastar en publicidad que no aporta
+                valor. Ver el punto 7.
               </li>
             </ul>
             <p className="mt-2">
@@ -125,6 +137,7 @@ export default function Privacidad() {
               <li><strong>Resend</strong> (envío del roadmap por correo).</li>
               <li><strong>MailerLite</strong> (gestión de suscriptores y envío de contenido, si diste tu autorización).</li>
               <li><strong>PostHog</strong> (analítica de uso).</li>
+              <li><strong>Meta Platforms</strong> (medición de publicidad — ver el punto 7).</li>
             </ul>
             <p className="mt-2">
               Estos proveedores pueden almacenar datos en servidores fuera de
@@ -136,7 +149,47 @@ export default function Privacidad() {
           </section>
 
           <section>
-            <h2 className="font-display font-bold text-white">7. Cuánto tiempo los conservamos</h2>
+            <h2 className="font-display font-bold text-white">
+              7. Cookies y medición de publicidad (Meta)
+            </h2>
+            <p>
+              Esta plataforma utiliza el <strong>píxel de Meta</strong> y su{" "}
+              <strong>API de Conversiones</strong>. Se activan al cargar la
+              página, antes de que nos des cualquier dato, porque su función es
+              precisamente medir cuánta gente empieza el diagnóstico y no lo
+              termina.
+            </p>
+            <ul className="list-disc pl-5 space-y-1 mt-2">
+              <li>
+                <strong>Qué se envía:</strong> el hecho de que iniciaste,
+                completaste o abandonaste el diagnóstico, junto con la campaña
+                de origen, tu dirección IP, tu tipo de navegador y las cookies
+                publicitarias de Meta (<code>_fbp</code>, <code>_fbc</code>).
+              </li>
+              <li>
+                <strong>Si dejas tu correo</strong>, tu email, nombre y teléfono
+                se envían a Meta <strong>cifrados de forma irreversible</strong>{" "}
+                (hash SHA-256), para que puedan reconocer una coincidencia sin
+                llegar a conocer el dato original. Meta nunca recibe tus
+                respuestas del diagnóstico.
+              </li>
+              <li>
+                <strong>Cómo desactivarlo:</strong> puedes bloquear estas
+                cookies desde la configuración de tu navegador, con una
+                extensión de bloqueo de rastreadores, o ajustar tus preferencias
+                de anuncios en tu cuenta de Facebook o Instagram. El
+                diagnóstico funciona igual si lo haces.
+              </li>
+            </ul>
+            <p className="mt-2">
+              También usamos <strong>PostHog</strong> para analítica interna de
+              producto. No usamos cookies de publicidad de terceros más allá de
+              las descritas aquí.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="font-display font-bold text-white">8. Cuánto tiempo los conservamos</h2>
             <p>
               Conservamos tus datos mientras exista una relación activa contigo
               (mientras no te des de baja ni solicites su supresión) y durante
@@ -145,10 +198,15 @@ export default function Privacidad() {
               sistemas y de los de nuestros encargados en un plazo máximo de 15
               días hábiles, salvo obligación legal de conservación.
             </p>
+            <p className="mt-2">
+              Los <strong>diagnósticos incompletos</strong> (los de quien empezó
+              y no dejó su correo) se eliminan automáticamente a los{" "}
+              <strong>180 días</strong>, sin que tengas que pedirlo.
+            </p>
           </section>
 
           <section>
-            <h2 className="font-display font-bold text-white">8. Cambios a esta política</h2>
+            <h2 className="font-display font-bold text-white">9. Cambios a esta política</h2>
             <p>
               Si modificamos esta política, publicaremos la versión actualizada
               en esta misma página con su nueva fecha. Si el cambio afecta

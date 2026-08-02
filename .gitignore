@@ -32,6 +32,9 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+# .env.example sí se versiona: no tiene secretos, solo documenta qué
+# variables hace falta configurar (incluidas las de Meta y el cron).
+!.env.example
 
 # vercel
 .vercel
